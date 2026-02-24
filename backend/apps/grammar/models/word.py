@@ -1,0 +1,21 @@
+from django.db import models
+
+# These are the generic parts of speech which a word can have
+PART_OF_SPEECH_CHOICES = [
+    ('noun', 'Noun'),
+    ('verb', 'Verb'),
+    ('adjective', 'Adjective'),
+    ('adverb', 'Adverb'),
+    ('pronoun', 'Pronoun'),
+    ('preposition', 'Preposition'),
+    ('particle', 'Particle'),
+    ('conjunction', 'Conjunction'),
+    ('interjection', 'Interjection'),
+    ('question', 'Question'),
+]
+
+class Word(models.Model):
+    text = models.CharField(max_length=100)
+    translation = models.CharField(max_length=255)
+    part_of_speech = models.CharField(max_length=50)
+
