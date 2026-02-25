@@ -7,7 +7,6 @@ class Phrase(models.Model):
     translation = models.CharField(max_length=255)
     # media = GenericRelation(Media)
 
-
     words = models.ManyToManyField(
         Word,
         through="PhraseWord",

@@ -1,6 +1,6 @@
 from django.db import models
 from .lesson import Lesson
-from grammar.models import Word, Phrase, Sentence 
+from apps.grammar.models import Phrase, Sentence, Word 
 
 # The lesson slide model is a base model which can be improved by one of the slide type models to add augmentations
 class LessonSlide(models.Model):
