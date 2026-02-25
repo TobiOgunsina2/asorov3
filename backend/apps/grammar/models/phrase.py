@@ -5,6 +5,8 @@ from .word import Word
 class Phrase(models.Model):
     text = models.CharField(max_length=255)
     translation = models.CharField(max_length=255)
+    # media = GenericRelation(Media)
+
 
     words = models.ManyToManyField(
         Word,

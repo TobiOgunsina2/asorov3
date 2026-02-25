@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 
 # These are the generic parts of speech which a word can have
 PART_OF_SPEECH_CHOICES = [
@@ -18,4 +19,5 @@ class Word(models.Model):
     text = models.CharField(max_length=100)
     translation = models.CharField(max_length=255)
     part_of_speech = models.CharField(max_length=50)
+    # media = GenericRelation(Media)
 

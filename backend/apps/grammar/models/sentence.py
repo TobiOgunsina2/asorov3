@@ -2,16 +2,18 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
-
 # A sentence is composed of words and phrases
 class Sentence(models.Model):
     text = models.CharField(max_length=255)
     translation = models.CharField(max_length=255)
+    # media = GenericRelation(Media)
+
 
     def __str__(self):
         return self.text
 
 # This is the through model for both phrases and words to sentence. Can be accessed on sentence as sentence.components
+# Typing is weak through content_type!!!
 class SentenceComponent(models.Model):
     sentence = models.ForeignKey(Sentence, on_delete=models.CASCADE, related_name="components")
 
