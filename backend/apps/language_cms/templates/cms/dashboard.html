@@ -1,0 +1,85 @@
+{% extends "cms/base.html" %}
+{% block title %}Dashboard — LinguaCMS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <h1>Content Overview</h1>
+    <div class="section-meta">All content managed by your team</div>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+
+  <div class="stat-card words">
+    <div class="stat-label">Words</div>
+    <div class="stat-number">{{ stats.words.total }}</div>
+    <div class="stat-breakdown">
+      <span class="stat-pill pill-draft">{{ stats.words.draft }} Draft</span>
+      <span class="stat-pill pill-review">{{ stats.words.review }} Review</span>
+      <span class="stat-pill pill-published">{{ stats.words.published }} Live</span>
+    </div>
+    <a href="{% url 'cms:word_list' %}" style="display:block;margin-top:16px;font-size:0.8rem;color:var(--amber);text-decoration:none;font-weight:500;">Manage words →</a>
+  </div>
+
+  <div class="stat-card phrases">
+    <div class="stat-label">Phrases</div>
+    <div class="stat-number">{{ stats.phrases.total }}</div>
+    <div class="stat-breakdown">
+      <span class="stat-pill pill-draft">{{ stats.phrases.draft }} Draft</span>
+      <span class="stat-pill pill-review">{{ stats.phrases.review }} Review</span>
+      <span class="stat-pill pill-published">{{ stats.phrases.published }} Live</span>
+    </div>
+    <a href="{% url 'cms:phrase_list' %}" style="display:block;margin-top:16px;font-size:0.8rem;color:var(--blue);text-decoration:none;font-weight:500;">Manage phrases →</a>
+  </div>
+
+  <div class="stat-card sentences">
+    <div class="stat-label">Sentences</div>
+    <div class="stat-number">{{ stats.sentences.total }}</div>
+    <div class="stat-breakdown">
+      <span class="stat-pill pill-draft">{{ stats.sentences.draft }} Draft</span>
+      <span class="stat-pill pill-review">{{ stats.sentences.review }} Review</span>
+      <span class="stat-pill pill-published">{{ stats.sentences.published }} Live</span>
+    </div>
+    <a href="{% url 'cms:sentence_list' %}" style="display:block;margin-top:16px;font-size:0.8rem;color:var(--green);text-decoration:none;font-weight:500;">Manage sentences →</a>
+  </div>
+
+</div>
+
+<!-- Quick create -->
+<div class="section-header" style="margin-top:8px;">
+  <div>
+    <h1>Quick Create</h1>
+    <div class="section-meta">Add new content items</div>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;flex-wrap:wrap;">
+  <button class="btn btn-primary"
+    hx-get="{% url 'cms:word_create' %}"
+    hx-target="#modal-container"
+    hx-swap="innerHTML"
+    onclick="openModal('create-modal')">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Word
+  </button>
+  <button class="btn btn-ghost"
+    hx-get="{% url 'cms:phrase_create' %}"
+    hx-target="#modal-container"
+    hx-swap="innerHTML"
+    onclick="openModal('create-modal')">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Phrase
+  </button>
+  <button class="btn btn-ghost"
+    hx-get="{% url 'cms:sentence_create' %}"
+    hx-target="#modal-container"
+    hx-swap="innerHTML"
+    onclick="openModal('create-modal')">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Sentence
+  </button>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+<div id="content-list">
+  <div class="cms-table-wrap">
+    <table class="cms-table">
+      <thead>
+        <tr>
+          <th>Word</th>
+          <th>Part of Speech</th>
+          <th>Status</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for word in page.object_list %}
+        <tr>
+          <td>
+            <div class="text-main">{{ word.text }}</div>
+            <div class="text-translation">{{ word.translation }}</div>
+          </td>
+          <td>
+            <span class="badge badge-{{ word.part_of_speech }}">{{ word.get_part_of_speech_display }}</span>
+          </td>
+          <td>
+            <!-- Quick status toggle -->
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span class="badge badge-{{ word.status }}">{{ word.get_status_display }}</span>
+              {% if word.status == 'draft' %}
+              <button class="btn btn-xs btn-ghost"
+                hx-post="{% url 'cms:word_status' word.pk %}"
+                hx-vals='{"status": "review"}'
+                hx-target="closest tr"
+                title="Submit for review">→ Review</button>
+              {% elif word.status == 'review' %}
+              <button class="btn btn-xs btn-amber"
+                hx-post="{% url 'cms:word_status' word.pk %}"
+                hx-vals='{"status": "published"}'
+                title="Publish">✓ Publish</button>
+              {% endif %}
+            </div>
+          </td>
+          <td style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--ink-muted)">
+            {{ word.updated_at|date:"M d, Y" }}
+          </td>
+          <td>
+            <div class="cell-actions">
+              <!-- Preview -->
+              <button class="btn-icon"
+                hx-get="{% url 'cms:preview' 'word' word.pk %}"
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                title="Preview">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+              <!-- Edit -->
+              <button class="btn-icon"
+                hx-get="{% url 'cms:word_edit' word.pk %}"
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                title="Edit">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <!-- Delete -->
+              <button class="btn-icon danger"
+                hx-get="#"
+                onclick="confirmDelete('{% url 'cms:word_delete' word.pk %}', '{{ word.text|escapejs }}')"
+                title="Delete">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">
+            <div class="table-empty">
+              <div class="empty-icon">📝</div>
+              <p>No words yet. <a href="{% url 'cms:word_create' %}" style="color:var(--amber)">Create the first one.</a></p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if page.has_other_pages %}
+    <div class="pagination">
+      {% if page.has_previous %}
+      <a class="page-btn" href="?page={{ page.previous_page_number }}">←</a>
+      {% endif %}
+      {% for num in page.paginator.page_range %}
+      <a class="page-btn {% if num == page.number %}active{% endif %}" href="?page={{ num }}">{{ num }}</a>
+      {% endfor %}
+      {% if page.has_next %}
+      <a class="page-btn" href="?page={{ page.next_page_number }}">→</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+function confirmDelete(url, name) {
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" style="display:flex" id="delete-modal">
+      <div class="modal-panel" style="width:420px">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Delete Word</div>
+            <div class="modal-subtitle">This cannot be undone</div>
+          </div>
+          <button class="btn-icon" onclick="closeModal('delete-modal')">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="confirm-panel">
+            Are you sure you want to delete this word?
+            <div class="confirm-item-preview">${name}</div>
+            This will also remove it from any phrases or sentences that reference it.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal('delete-modal')">Cancel</button>
+          <button class="btn btn-danger"
+            hx-post="${url}"
+            hx-target="body"
+            hx-push-url="false"
+            onclick="closeModal('delete-modal')">Delete Word</button>
+        </div>
+      </div>
+    </div>`;
+  htmx.process(document.getElementById('modal-container'));
+}
+</script>

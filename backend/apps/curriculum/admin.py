@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.apps import apps
-from .models.slide import SlideWord, SlideSentence, MultipleChoiceContent, LessonSlide
 # Register your models here.
 
 app_models = apps.get_app_config('curriculum').get_models()

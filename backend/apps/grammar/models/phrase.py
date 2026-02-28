@@ -1,8 +1,10 @@
 from django.db import models
 from .word import Word
+from apps.language_cms.models import CMSContentMixin
 
 # Phrases have their own text and contain words which can be highlighted
-class Phrase(models.Model):
+# Content Mixin allows for draft/review/published status, creator tracking, and internal notes. Add to Word and Sentence as well.
+class Phrase(CMSContentMixin, models.Model):
     text = models.CharField(max_length=255)
     translation = models.CharField(max_length=255)
     # media = GenericRelation(Media)

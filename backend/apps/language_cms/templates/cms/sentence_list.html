@@ -1,0 +1,40 @@
+{% extends "cms/base.html" %}
+{% block title %}Sentences — LinguaForge CMS{% endblock %}
+{% block nav_sentences %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Sentences</div>
+    <div class="page-subtitle">Full sentences composed of words and phrases</div>
+  </div>
+  <a href="{% url 'cms:sentence_create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    New Sentence
+  </a>
+</div>
+
+<form class="filter-bar" id="sentence-filters"
+      hx-get="{% url 'cms:sentence_list' %}"
+      hx-trigger="input changed delay:300ms from:#q-sentences, change from:.sentence-filter-select"
+      hx-target="#sentence-table-wrap"
+      hx-include="#sentence-filters">
+
+  <div class="search-input-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" name="q" id="q-sentences" value="{{ q }}" placeholder="Search sentences…" class="search-input" autocomplete="off">
+  </div>
+
+  <select name="status" class="filter-select sentence-filter-select">
+    <option value="">All statuses</option>
+    <option value="draft"     {% if status == "draft"     %}selected{% endif %}>Draft</option>
+    <option value="published" {% if status == "published" %}selected{% endif %}>Published</option>
+  </select>
+
+  <div class="htmx-indicator"><div class="spinner"></div></div>
+</form>
+
+<div class="card" id="sentence-table-wrap">
+  {% include "cms/partials/sentence_table.html" %}
+</div>
+{% endblock %}

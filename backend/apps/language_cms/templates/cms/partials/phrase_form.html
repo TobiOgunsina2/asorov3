@@ -1,0 +1,81 @@
+<div class="modal-overlay" style="display:flex" id="create-modal">
+  <div class="modal-panel" style="width:620px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">{{ action }} Phrase</div>
+        <div class="modal-subtitle">Multi-word expression</div>
+      </div>
+      <button class="btn-icon" onclick="closeModal('create-modal')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <form
+      {% if object %}
+        hx-post="{% url 'cms:phrase_edit' object.pk %}"
+      {% else %}
+        hx-post="{% url 'cms:phrase_create' %}"
+      {% endif %}
+      hx-target="body" hx-push-url="false">
+      {% csrf_token %}
+
+      <div class="modal-body">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Language</label>
+            {{ form.text }}
+          </div>
+          <div class="form-group">
+            <label>English Translation</label>
+            {{ form.translation }}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            {{ form.status }}
+          </div>
+        </div>
+
+        <!-- Word Picker -->
+        <div class="form-group">
+          <label>Associated Words <span style="color:var(--border);font-weight:400;text-transform:none;font-size:0.7rem">(ordered by selection)</span></label>
+          <div class="word-picker" id="phrase-word-picker" data-word-picker>
+            <div class="word-picker-search">
+              <input type="text" class="cms-input picker-search" placeholder="Filter words...">
+            </div>
+            <div class="word-picker-list">
+              {% for word in words %}
+              <button type="button" class="word-chip" data-word-id="{{ word.pk }}" data-word-text="{{ word.text }}">
+                {{ word.text }}
+                <span class="badge badge-{{ word.part_of_speech }}" style="margin-left:2px">{{ word.part_of_speech|slice:":3" }}</span>
+              </button>
+              {% empty %}
+              <span style="font-size:0.8rem;color:var(--ink-muted);padding:8px">No published words yet.</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="selected-words-area">
+            <span class="empty-hint">Click words above to add them</span>
+          </div>
+          {{ form.word_ids }}
+        </div>
+
+        <div class="form-group">
+          <label>Architect Notes</label>
+          {{ form.notes }}
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('create-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">{{ action }} Phrase</button>
+      </div>
+    </form>
+  </div>
+</div>

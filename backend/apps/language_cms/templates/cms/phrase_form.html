@@ -1,0 +1,228 @@
+{% extends "cms/base.html" %}
+{% block title %}{{ action }} Phrase — LinguaForge CMS{% endblock %}
+{% block nav_phrases %}active{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">{{ action }} Phrase</div>
+      <div class="page-subtitle">{% if phrase %}Editing: {{ phrase.text }}{% else %}Build a phrase from existing words{% endif %}</div>
+    </div>
+    <a href="{% url 'cms:phrase_list' %}" class="btn btn-secondary">← Back to Phrases</a>
+  </div>
+
+  <form method="post" id="phrase-form"
+        action="{% if phrase %}{% url 'cms:phrase_edit' phrase.pk %}{% else %}{% url 'cms:phrase_create' %}{% endif %}">
+    {% csrf_token %}
+
+    <!-- Core Details -->
+    <div class="form-card">
+      <div class="form-card-title">Core Details</div>
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label class="form-label" for="id_text">Phrase Text</label>
+          <input type="text" name="text" id="id_text" class="form-control"
+                 value="{{ phrase.text|default:'' }}" placeholder="e.g. おはようございます" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_translation">Translation</label>
+          <input type="text" name="translation" id="id_translation" class="form-control"
+                 value="{{ phrase.translation|default:'' }}" placeholder="e.g. Good morning" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_status">Status</label>
+          <select name="status" id="id_status" class="form-control">
+            <option value="draft"     {% if phrase.status == 'draft' or not phrase %}selected{% endif %}>Draft</option>
+            <option value="published" {% if phrase.status == 'published' %}selected{% endif %}>Published</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Word Composition -->
+    <div class="form-card">
+      <div class="form-card-title">Word Composition — Ordered</div>
+      <p style="font-size: 0.83rem; color: var(--ink-muted); margin-bottom: 16px;">
+        Pick words from the panel and drag to reorder. The order here maps to <code>PhraseWord.order</code>.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+        <!-- Left: Word picker -->
+        <div>
+          <div class="form-label" style="margin-bottom: 8px;">Available Words</div>
+          <div class="word-picker">
+            <div class="word-picker-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:22px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--ink-faint)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" id="word-search" placeholder="Filter words…"
+                     class="form-control" style="padding-left: 30px;" autocomplete="off">
+            </div>
+            <div class="word-picker-list" id="word-picker-list">
+              {% for word in words %}
+              <div class="word-picker-item {% if word.pk in selected_word_ids %}selected{% endif %}"
+                   data-word-id="{{ word.pk }}"
+                   data-word-text="{{ word.text }}"
+                   data-word-trans="{{ word.translation }}"
+                   onclick="toggleWordPick(this)">
+                <div style="flex:1;">
+                  <div style="font-weight: 500;">{{ word.text }}</div>
+                  <div style="font-size: 0.78rem; color: var(--ink-muted);">{{ word.translation }}</div>
+                </div>
+                <span class="badge-pos" style="font-size: 0.65rem;">{{ word.part_of_speech }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Ordered zone -->
+        <div>
+          <div class="form-label" style="margin-bottom: 8px;">Word Order (drag to reorder)</div>
+          <div class="chip-zone" id="chip-zone" ondragover="allowDrop(event)" ondrop="onDrop(event)">
+            <!-- chips inserted by JS -->
+          </div>
+          <div style="font-size: 0.78rem; color: var(--ink-faint); margin-top: 8px;">
+            Drag chips to reorder • Click × to remove
+          </div>
+          <!-- Hidden inputs submitted with form -->
+          <div id="word-inputs"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; padding: 4px 0 16px;">
+      <a href="{% url 'cms:phrase_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Phrase
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Pre-selected words (for edit mode)
+  const preSelected = {{ selected_word_ids|default:"[]"|safe }};
+  const orderedWords = []; // { id, text, trans }
+
+  // Populate from picker items
+  document.addEventListener('DOMContentLoaded', () => {
+    preSelected.forEach(id => {
+      const item = document.querySelector(`.word-picker-item[data-word-id="${id}"]`);
+      if (item) addChip(item.dataset.wordId, item.dataset.wordText, item.dataset.wordTrans, false);
+    });
+    renderInputs();
+  });
+
+  // Word search filter
+  document.getElementById('word-search').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.word-picker-item').forEach(item => {
+      const match = item.dataset.wordText.toLowerCase().includes(q) ||
+                    item.dataset.wordTrans.toLowerCase().includes(q);
+      item.style.display = match ? '' : 'none';
+    });
+  });
+
+  function toggleWordPick(el) {
+    const id = el.dataset.wordId;
+    const text = el.dataset.wordText;
+    const trans = el.dataset.wordTrans;
+    if (el.classList.contains('selected')) {
+      el.classList.remove('selected');
+      removeChipById(id);
+    } else {
+      el.classList.add('selected');
+      addChip(id, text, trans, true);
+    }
+  }
+
+  function addChip(id, text, trans, render=true) {
+    if (orderedWords.find(w => w.id === id)) return;
+    orderedWords.push({ id, text, trans });
+    if (render) renderChips();
+    renderInputs();
+  }
+
+  function removeChipById(id) {
+    const idx = orderedWords.findIndex(w => w.id === id);
+    if (idx !== -1) orderedWords.splice(idx, 1);
+    renderChips();
+    renderInputs();
+    // deselect picker
+    const item = document.querySelector(`.word-picker-item[data-word-id="${id}"]`);
+    if (item) item.classList.remove('selected');
+  }
+
+  function renderChips() {
+    const zone = document.getElementById('chip-zone');
+    zone.innerHTML = '';
+    orderedWords.forEach((w, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.draggable = true;
+      chip.dataset.index = i;
+      chip.innerHTML = `
+        <span>${w.text}</span>
+        <button type="button" class="chip-remove" onclick="removeChipById('${w.id}')">×</button>
+      `;
+      chip.addEventListener('dragstart', onDragStart);
+      zone.appendChild(chip);
+    });
+  }
+
+  function renderInputs() {
+    const container = document.getElementById('word-inputs');
+    container.innerHTML = '';
+    orderedWords.forEach(w => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'word_ids';
+      input.value = w.id;
+      container.appendChild(input);
+    });
+  }
+
+  // Drag and drop reorder
+  let dragIdx = null;
+
+  function onDragStart(e) {
+    dragIdx = parseInt(e.currentTarget.dataset.index);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function allowDrop(e) {
+    e.preventDefault();
+    document.getElementById('chip-zone').classList.add('drag-over');
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('chip-zone').classList.remove('drag-over');
+    const zone = document.getElementById('chip-zone');
+    const chips = [...zone.querySelectorAll('.chip')];
+    const dropTarget = e.target.closest('.chip');
+    if (!dropTarget || dragIdx === null) return;
+    const dropIdx = parseInt(dropTarget.dataset.index);
+    if (dragIdx === dropIdx) return;
+    const moved = orderedWords.splice(dragIdx, 1)[0];
+    orderedWords.splice(dropIdx, 0, moved);
+    dragIdx = null;
+    renderChips();
+    renderInputs();
+  }
+
+  document.getElementById('chip-zone').addEventListener('dragleave', () => {
+    document.getElementById('chip-zone').classList.remove('drag-over');
+  });
+</script>
+{% endblock %}

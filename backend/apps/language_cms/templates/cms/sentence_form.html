@@ -1,0 +1,199 @@
+{% extends "cms/base.html" %}
+{% block title %}{{ action }} Sentence — LinguaForge CMS{% endblock %}
+{% load json_extras %}
+{% block nav_sentences %}active{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">{{ action }} Sentence</div>
+      <div class="page-subtitle">{% if sentence %}Editing: {{ sentence.text }}{% else %}Compose a sentence from words and phrases{% endif %}</div>
+    </div>
+    <a href="{% url 'cms:sentence_list' %}" class="btn btn-secondary">← Back to Sentences</a>
+  </div>
+
+  <form method="post" id="sentence-form"
+        action="{% if sentence %}{% url 'cms:sentence_edit' sentence.pk %}{% else %}{% url 'cms:sentence_create' %}{% endif %}">
+    {% csrf_token %}
+
+    <!-- Core Details -->
+    <div class="form-card">
+      <div class="form-card-title">Core Details</div>
+      <div class="form-grid">
+
+        <div class="form-group form-grid-full">
+          <label class="form-label" for="id_text">Sentence Text</label>
+          <input type="text" name="text" id="id_text" class="form-control"
+                 value="{{ sentence.text|default:'' }}"
+                 placeholder="e.g. 私は毎朝走ります。" required autofocus>
+        </div>
+
+        <div class="form-group form-grid-full">
+          <label class="form-label" for="id_translation">Translation</label>
+          <input type="text" name="translation" id="id_translation" class="form-control"
+                 value="{{ sentence.translation|default:'' }}"
+                 placeholder="e.g. I run every morning." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_status">Status</label>
+          <select name="status" id="id_status" class="form-control">
+            <option value="draft"     {% if sentence.status == 'draft' or not sentence %}selected{% endif %}>Draft</option>
+            <option value="published" {% if sentence.status == 'published' %}selected{% endif %}>Published</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Component Builder -->
+    <div class="form-card">
+      <div class="form-card-title">Sentence Components</div>
+      <p style="font-size: 0.83rem; color: var(--ink-muted); margin-bottom: 20px;">
+        Map Words or Phrases to regions of the sentence text.
+        The <code>highlight_start / highlight_end</code> fields are character offsets so hovering in the student UI shows the translation.
+      </p>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="form-label">Components</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addComponentRow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>
+          Add Component
+        </button>
+      </div>
+
+      <div id="component-list">
+        <!-- Rows added dynamically -->
+      </div>
+
+      <div id="component-inputs"></div><!-- hidden inputs -->
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; padding: 4px 0 16px;">
+      <a href="{% url 'cms:sentence_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Sentence
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<!-- Data injected from Django for the JS -->
+<script>
+  const WORDS_DATA = [
+    {% for word in words %}
+    { id: "{{ word.pk }}", text: {{ word.text|tojson }}, type: "word" },
+    {% endfor %}
+  ];
+
+  const PHRASES_DATA = [
+    {% for phrase in phrases %}
+    { id: "{{ phrase.pk }}", text: {{ phrase.text|tojson }}, type: "phrase" },
+    {% endfor %}
+  ];
+
+  const ALL_ITEMS = [...WORDS_DATA, ...PHRASES_DATA];
+
+  // Pre-existing components (edit mode)
+  const EXISTING = {{ existing_components|default:"[]"|safe }};
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let rowCount = 0;
+
+  function addComponentRow(comp) {
+    const list = document.getElementById('component-list');
+    const idx = rowCount++;
+    const row = document.createElement('div');
+    row.className = 'component-row';
+    row.dataset.index = idx;
+
+    const typeVal   = comp?.type || 'word';
+    const idVal     = comp?.object_id || '';
+    const hStart    = comp?.highlight_start ?? '';
+    const hEnd      = comp?.highlight_end ?? '';
+
+    // Build select options
+    const wordOpts  = WORDS_DATA.map(w =>
+      `<option value="${w.id}" ${(typeVal==='word' && String(w.id)===String(idVal)) ? 'selected' : ''}>${w.text}</option>`
+    ).join('');
+    const phraseOpts = PHRASES_DATA.map(p =>
+      `<option value="${p.id}" ${(typeVal==='phrase' && String(p.id)===String(idVal)) ? 'selected' : ''}>${p.text}</option>`
+    ).join('');
+
+    row.innerHTML = `
+      <select class="form-control comp-type" data-row="${idx}" onchange="onTypeChange(this)">
+        <option value="word"   ${typeVal==='word'   ? 'selected' : ''}>Word</option>
+        <option value="phrase" ${typeVal==='phrase' ? 'selected' : ''}>Phrase</option>
+      </select>
+
+      <select class="form-control comp-id" id="comp-id-${idx}" data-row="${idx}">
+        ${typeVal === 'word' ? wordOpts : phraseOpts}
+      </select>
+
+      <input type="number" class="form-control comp-hs" placeholder="Start"
+             value="${hStart}" min="0" data-row="${idx}" title="Highlight start (char offset)">
+
+      <input type="number" class="form-control comp-he" placeholder="End"
+             value="${hEnd}" min="0" data-row="${idx}" title="Highlight end (char offset)">
+
+      <button type="button" class="btn btn-danger btn-icon" onclick="removeRow(this)" title="Remove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+
+    list.appendChild(row);
+    updateHiddenInputs();
+  }
+
+  function onTypeChange(sel) {
+    const idx = sel.dataset.row;
+    const type = sel.value;
+    const idSel = document.getElementById(`comp-id-${idx}`);
+    const opts = (type === 'word' ? WORDS_DATA : PHRASES_DATA)
+      .map(item => `<option value="${item.id}">${item.text}</option>`)
+      .join('');
+    idSel.innerHTML = opts;
+    updateHiddenInputs();
+  }
+
+  function removeRow(btn) {
+    btn.closest('.component-row').remove();
+    updateHiddenInputs();
+  }
+
+  function updateHiddenInputs() {
+    const container = document.getElementById('component-inputs');
+    container.innerHTML = '';
+    document.querySelectorAll('.component-row').forEach((row, i) => {
+      const type = row.querySelector('.comp-type').value;
+      const id   = row.querySelector('.comp-id').value;
+      const hs   = row.querySelector('.comp-hs').value;
+      const he   = row.querySelector('.comp-he').value;
+      const add  = (name, val) => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = name; inp.value = val;
+        container.appendChild(inp);
+      };
+      add(`component_type_${i}`, type);
+      add(`component_id_${i}`,   id);
+      if (hs) add(`highlight_start_${i}`, hs);
+      if (he) add(`highlight_end_${i}`,   he);
+    });
+  }
+
+  // Listen to live changes
+  document.getElementById('component-list').addEventListener('change', updateHiddenInputs);
+  document.getElementById('component-list').addEventListener('input', updateHiddenInputs);
+
+  // Pre-populate edit mode
+  document.addEventListener('DOMContentLoaded', () => {
+    EXISTING.forEach(comp => addComponentRow(comp));
+  });
+</script>
+{% endblock %}

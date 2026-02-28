@@ -37,9 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'apps.users',
     'apps.grammar',
     'apps.curriculum',
-    'apps.users'
+    'apps.language_cms',
 ]
 
 MIDDLEWARE = [
@@ -106,6 +107,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = "users.User"
 
+
+# Login and logout redirects for language cms. Login required for all cms views, so redirect to login page if not authenticated. After login, redirect to cms home page.
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/cms/'
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

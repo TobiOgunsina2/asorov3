@@ -1,0 +1,53 @@
+<!-- partials/preview_sentence.html -->
+<div>
+  {% with text=sentence.text %}
+  <div class="preview-word-card" style="display: block; max-width: 100%;">
+
+    <!-- Highlighted sentence text -->
+    <div class="preview-text" style="font-size: 1.25rem; line-height: 1.5;">
+      {% for comp in sentence.components.all %}
+        {% if comp.highlight_start is not None and comp.highlight_end is not None %}
+          {# Show text before highlight #}
+          {% if forloop.first %}{{ text|slice:":comp.highlight_start" }}{% endif %}
+          <span class="preview-highlight" title="{{ comp.content_object.translation }}">{{ text|slice:"comp.highlight_start:comp.highlight_end" }}</span>
+        {% endif %}
+      {% empty %}
+        {{ text }}
+      {% endfor %}
+      {# Fallback: show plain text if no components with highlights #}
+      {% if not sentence.components.exists %}{{ text }}{% endif %}
+    </div>
+
+    <div class="preview-translation">{{ sentence.translation }}</div>
+
+    <!-- Components list -->
+    {% if sentence.components.exists %}
+    <div style="margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px;">
+      <div style="font-size: 0.72rem; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 8px;">Components</div>
+      {% for comp in sentence.components.all %}
+      <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.83rem;">
+        <span style="color: var(--ink-faint); width: 20px;">{{ comp.order }}.</span>
+        <span style="background: var(--amber-light); color: var(--amber); border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; font-family: var(--font-display);">{{ comp.content_type.model }}</span>
+        <span style="font-weight: 500;">{{ comp.content_object.text }}</span>
+        <span style="color: var(--ink-muted); font-style: italic;">{{ comp.content_object.translation }}</span>
+        {% if comp.highlight_start is not None %}
+        <span style="color: var(--ink-faint); font-size: 0.78rem; margin-left: auto;">[{{ comp.highlight_start }}–{{ comp.highlight_end }}]</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 12px;">
+      <span class="badge badge-{{ sentence.status }}">{{ sentence.get_status_display }}</span>
+    </div>
+
+  </div>
+  {% endwith %}
+
+  {% if sentence.updated_at %}
+  <div style="margin-top: 14px; font-size: 0.78rem; color: var(--ink-faint);">
+    Last updated {{ sentence.updated_at|date:"d M Y, H:i" }}
+  </div>
+  {% endif %}
+</div>

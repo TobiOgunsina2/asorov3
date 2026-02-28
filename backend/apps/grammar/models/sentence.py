@@ -1,9 +1,12 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from apps.language_cms.models import CMSContentMixin
+
 
 # A sentence is composed of words and phrases
-class Sentence(models.Model):
+# Content Mixin allows for draft/review/published status, creator tracking, and internal notes. Add to Phrase and Sentence as well.
+class Sentence(CMSContentMixin, models.Model):
     text = models.CharField(max_length=255)
     translation = models.CharField(max_length=255)
     # media = GenericRelation(Media)

@@ -1,0 +1,25 @@
+<!-- partials/preview_phrase.html -->
+<div>
+  <div class="preview-word-card" style="display: inline-block; max-width: 100%;">
+    <div class="preview-text">{{ phrase.text }}</div>
+    <div class="preview-translation">{{ phrase.translation }}</div>
+    <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+      {% for pw in phrase.phrase_words.all %}
+        <span style="background: var(--paper); border: 1px solid var(--border); border-radius: 4px; padding: 2px 9px; font-size: 0.8rem;">
+          <span style="font-weight: 600;">{{ pw.order }}.</span> {{ pw.word.text }}
+          <span style="color: var(--ink-muted);">— {{ pw.word.translation }}</span>
+        </span>
+      {% empty %}
+        <span style="color: var(--ink-faint); font-size: 0.82rem;">No words linked</span>
+      {% endfor %}
+    </div>
+    <div style="margin-top: 10px;">
+      <span class="badge badge-{{ phrase.status }}">{{ phrase.get_status_display }}</span>
+    </div>
+  </div>
+  {% if phrase.updated_at %}
+  <div style="margin-top: 14px; font-size: 0.78rem; color: var(--ink-faint);">
+    Last updated {{ phrase.updated_at|date:"d M Y, H:i" }}
+  </div>
+  {% endif %}
+</div>

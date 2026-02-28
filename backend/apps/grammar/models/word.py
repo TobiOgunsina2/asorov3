@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
+from apps.language_cms.models import CMSContentMixin
 
 # These are the generic parts of speech which a word can have
 PART_OF_SPEECH_CHOICES = [
@@ -15,7 +16,8 @@ PART_OF_SPEECH_CHOICES = [
     ('question', 'Question'),
 ]
 
-class Word(models.Model):
+# Content Mixin allows for draft/review/published status, creator tracking, and internal notes. Add to Phrase and Sentence as well.
+class Word(CMSContentMixin, models.Model):
     text = models.CharField(max_length=100)
     translation = models.CharField(max_length=255)
     part_of_speech = models.CharField(max_length=50)

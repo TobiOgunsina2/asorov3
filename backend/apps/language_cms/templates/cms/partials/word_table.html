@@ -1,0 +1,88 @@
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Word</th>
+        <th>Translation</th>
+        <th>Part of Speech</th>
+        <th>Status</th>
+        <th>Updated</th>
+        <th style="text-align:right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for word in words %}
+      <tr id="word-row-{{ word.pk }}">
+        <td style="font-weight: 500;">{{ word.text }}</td>
+        <td class="td-muted">{{ word.translation }}</td>
+        <td><span class="badge-pos">{{ word.part_of_speech }}</span></td>
+        <td>
+          <div id="word-status-{{ word.pk }}">
+            <span class="badge badge-{{ word.status }}">{{ word.get_status_display }}</span>
+          </div>
+        </td>
+        <td class="td-muted">{{ word.updated_at|date:"d M Y" }}</td>
+        <td>
+          <div class="td-actions">
+
+            <!-- Preview -->
+            <button class="btn btn-icon btn-sm"
+                    hx-get="{% url 'cms:preview_word' word.pk %}"
+                    hx-target="#preview-modal-body"
+                    hx-on::after-request="document.getElementById('preview-modal').showModal()"
+                    data-tip="Preview">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+
+            <!-- Publish toggle -->
+            <button class="btn btn-sm {% if word.is_published %}btn-secondary{% else %}btn-success{% endif %}"
+                    hx-post="{% url 'cms:word_publish_toggle' word.pk %}"
+                    hx-target="#word-status-{{ word.pk }}"
+                    hx-swap="innerHTML"
+                    data-tip="{% if word.is_published %}Unpublish{% else %}Publish{% endif %}">
+              {% if word.is_published %}Unpublish{% else %}Publish{% endif %}
+            </button>
+
+            <!-- Edit -->
+            <a href="{% url 'cms:word_edit' word.pk %}" class="btn btn-secondary btn-sm" data-tip="Edit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </a>
+
+            <!-- Delete -->
+            <button class="btn btn-danger btn-sm"
+                    hx-delete="{% url 'cms:word_delete' word.pk %}"
+                    hx-target="#word-row-{{ word.pk }}"
+                    hx-swap="outerHTML swap:0.3s"
+                    hx-confirm="Delete '{{ word.text }}'? This cannot be undone."
+                    data-tip="Delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">
+          <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p>No words found. Try adjusting your search or create a new word.</p>
+            <a href="{% url 'cms:word_create' %}" class="btn btn-primary btn-sm">Create Word</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Preview Modal -->
+<dialog id="preview-modal" style="border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; min-width: 380px; box-shadow: var(--shadow-lg);">
+  <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-family: var(--font-display); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted);">Preview</span>
+    <button onclick="document.getElementById('preview-modal').close()" class="btn btn-icon" style="font-size: 1.2rem; padding: 2px 8px; line-height: 1;">×</button>
+  </div>
+  <div id="preview-modal-body" style="padding: 24px;">
+    <!-- filled by HTMX -->
+  </div>
+</dialog>

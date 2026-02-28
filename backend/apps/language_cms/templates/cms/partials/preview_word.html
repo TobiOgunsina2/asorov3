@@ -1,0 +1,16 @@
+<!-- partials/preview_word.html -->
+<div>
+  <div class="preview-word-card" style="display:inline-block;">
+    <div class="preview-text">{{ word.text }}</div>
+    <div class="preview-translation">{{ word.translation }}</div>
+    <div style="margin-top:10px; display:flex; gap: 8px; align-items:center;">
+      <span class="badge-pos">{{ word.part_of_speech }}</span>
+      <span class="badge badge-{{ word.status }}">{{ word.get_status_display }}</span>
+    </div>
+  </div>
+  {% if word.updated_at %}
+  <div style="margin-top: 14px; font-size: 0.78rem; color: var(--ink-faint);">
+    Last updated {{ word.updated_at|date:"d M Y, H:i" }}
+  </div>
+  {% endif %}
+</div>

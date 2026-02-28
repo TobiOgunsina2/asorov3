@@ -1,0 +1,80 @@
+<div class="modal-overlay" style="display:flex" id="create-modal">
+  <div class="modal-panel" style="width:640px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">{{ action }} Sentence</div>
+        <div class="modal-subtitle">Full sentence with components</div>
+      </div>
+      <button class="btn-icon" onclick="closeModal('create-modal')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <form
+      {% if object %}
+        hx-post="{% url 'cms:sentence_edit' object.pk %}"
+      {% else %}
+        hx-post="{% url 'cms:sentence_create' %}"
+      {% endif %}
+      hx-target="body" hx-push-url="false">
+      {% csrf_token %}
+
+      <div class="modal-body">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Language</label>
+            {{ form.text }}
+          </div>
+          <div class="form-group">
+            <label>English Translation</label>
+            {{ form.translation }}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            {{ form.status }}
+          </div>
+        </div>
+
+        <!-- Components info -->
+        <div style="padding:12px 14px;background:var(--blue-pale);border-radius:var(--radius);border-left:3px solid var(--blue);font-size:0.82rem;color:var(--ink-soft);margin-bottom:16px;">
+          <strong>Tip:</strong> After saving, you can add <code>SentenceComponent</code> links (words &amp; phrases with highlight ranges) from the detail view.
+        </div>
+
+        <div class="form-group">
+          <label>Architect Notes</label>
+          {{ form.notes }}
+        </div>
+
+        <!-- Live preview -->
+        <div style="padding:16px;background:var(--parchment);border-radius:var(--radius);border:1px solid var(--border-soft);">
+          <div class="preview-type-label">Preview</div>
+          <div id="sentence-preview-text" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:600;color:var(--ink);line-height:1.4">—</div>
+          <div id="sentence-preview-trans" style="font-size:0.85rem;color:var(--ink-muted);margin-top:4px;font-style:italic">—</div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('create-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">{{ action }} Sentence</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const t = document.getElementById('id_text');
+  const r = document.getElementById('id_translation');
+  const pt = document.getElementById('sentence-preview-text');
+  const pr = document.getElementById('sentence-preview-trans');
+  function update(){ pt.textContent = t?.value||'—'; pr.textContent = r?.value||'—'; }
+  t?.addEventListener('input', update); r?.addEventListener('input', update); update();
+})();
+</script>

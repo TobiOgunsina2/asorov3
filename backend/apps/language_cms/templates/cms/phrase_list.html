@@ -1,0 +1,40 @@
+{% extends "cms/base.html" %}
+{% block title %}Phrases — LinguaForge CMS{% endblock %}
+{% block nav_phrases %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Phrases</div>
+    <div class="page-subtitle">Multi-word expressions built from vocabulary</div>
+  </div>
+  <a href="{% url 'cms:phrase_create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    New Phrase
+  </a>
+</div>
+
+<form class="filter-bar" id="phrase-filters"
+      hx-get="{% url 'cms:phrase_list' %}"
+      hx-trigger="input changed delay:300ms from:#q-phrases, change from:.phrase-filter-select"
+      hx-target="#phrase-table-wrap"
+      hx-include="#phrase-filters">
+
+  <div class="search-input-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" name="q" id="q-phrases" value="{{ q }}" placeholder="Search phrases…" class="search-input" autocomplete="off">
+  </div>
+
+  <select name="status" class="filter-select phrase-filter-select">
+    <option value="">All statuses</option>
+    <option value="draft"     {% if status == "draft"     %}selected{% endif %}>Draft</option>
+    <option value="published" {% if status == "published" %}selected{% endif %}>Published</option>
+  </select>
+
+  <div class="htmx-indicator"><div class="spinner"></div></div>
+</form>
+
+<div class="card" id="phrase-table-wrap">
+  {% include "cms/partials/phrase_table.html" %}
+</div>
+{% endblock %}

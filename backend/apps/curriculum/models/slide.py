@@ -53,12 +53,12 @@ class SlideSentence(models.Model):
 
 class MultipleChoiceContent(models.Model):
     slide = models.OneToOneField(LessonSlide, on_delete=models.CASCADE, related_name="mc_content")
-    question = models.TextField()
+    question = models.CharField(max_length=200, blank=True)
     options = models.JSONField()  # [{"text": "Option 1", "is_correct": True}, ...]
 
 class TrueFalseContent(models.Model):
     slide = models.OneToOneField(LessonSlide, on_delete=models.CASCADE, related_name="tf_content")
-    question = models.TextField()
+    question = models.CharField(max_length=200, blank=True)
     options = models.JSONField()  # [{"text": "Option 1", "is_correct": True}, ...]
 
 class FillInBlankContent(models.Model):
