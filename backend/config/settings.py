@@ -37,9 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'apps.grammar',
     'apps.curriculum',
+    'apps.users'
 ]
 
 MIDDLEWARE = [
@@ -100,6 +100,11 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# This is the custom user model designated in the user app
+# It allows for the creation of staff users and normal users
+
+AUTH_USER_MODEL = "users.User"
 
 
 # Internationalization
