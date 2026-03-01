@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.grammar',
     'apps.curriculum',
     'apps.language_cms',
+    'apps.profiles',
 ]
 
 MIDDLEWARE = [

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from apps.curriculum.models import Lesson
 
 # Create your models here.
 
@@ -20,10 +21,10 @@ class Profile(models.Model):
     xp = models.IntegerField(default=0)
     streak = models.IntegerField(default=0)
 
-# Tracks learning progress for lessons
+# Tracks learning progress for each user lesson
 class UserLessonProgress(models.Model):
     profile = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    lesson = models.ForeignKey("Lesson", on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
 
     completed = models.BooleanField(default=False)
 
