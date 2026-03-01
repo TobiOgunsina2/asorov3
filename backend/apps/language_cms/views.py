@@ -10,12 +10,13 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
+from django.utils import timezone
 
-from apps.grammar.models import Word, Phrase, Sentence, PhraseWord, SentenceComponent
+from apps.grammar.models import Word, Phrase, Sentence
 from .models import PublishStatus
 
 from .forms import WordForm, PhraseForm, SentenceForm, SearchFilterForm
-
+from .curriculum_views import *
 
 def is_architect(user):
     return user.is_staff or user.groups.filter(name="content_architect").exists()
@@ -28,37 +29,68 @@ architect_required = user_passes_test(is_architect, login_url="/accounts/login/"
 @login_required
 @architect_required
 def dashboard(request):
-    # Replace with real querysets
-    # stats = {
-    #     "words": {"total": Word.objects.count(), "draft": Word.objects.filter(status="draft").count(), "published": Word.objects.filter(status="published").count()},
-    #     "phrases": {"total": Phrase.objects.count(), ...},
-    #     "sentences": {"total": Sentence.objects.count(), ...},
-    # }
+    # Slide type breakdown — e.g. {"MultipleChoice": 4, "Intro": 2}
+    slide_type_breakdown = dict(
+        LessonSlide.objects
+            .values_list("slide_type")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+            .values_list("slide_type", "count")
+    )
+
     stats = {
-        "words": {"total": 0, "draft": 0, "review": 0, "published": 0},
-        "phrases": {"total": 0, "draft": 0, "review": 0, "published": 0},
-        "sentences": {"total": 0, "draft": 0, "review": 0, "published": 0},
+        "units":         Unit.objects.count(),
+        "lesson_groups": LessonGroup.objects.count(),
+        "lessons":       Lesson.objects.count(),
+        "slides":        LessonSlide.objects.count(),
+        "slide_type_breakdown": slide_type_breakdown,
+        "words": {
+            "total":     Word.objects.count(),
+            "published": Word.objects.filter(status="published").count(),
+            "draft":     Word.objects.filter(status="draft").count(),
+        },
+        "phrases": {
+            "total":     Phrase.objects.count(),
+            "published": Phrase.objects.filter(status="published").count(),
+            "draft":     Phrase.objects.filter(status="draft").count(),
+        },
+        "sentences": {
+            "total":     Sentence.objects.count(),
+            "published": Sentence.objects.filter(status="published").count(),
+            "draft":     Sentence.objects.filter(status="draft").count(),
+        },
     }
-    return render(request, "cms/dashboard.html", {"stats": stats})
 
+    recent_lessons = (
+        Lesson.objects
+            .select_related("group__unit")
+            .prefetch_related("slides")
+            .order_by("-id")[:6]
+    )
 
+    recent_words = Word.objects.order_by("-updated_at")[:6]
+
+    return render(request, "cms/dashboard.html", {
+        "stats": stats,
+        "recent_lessons": recent_lessons,
+        "recent_words": recent_words,
+    })
 # ── Words ────────────────────────────────────────────────────────────────────
 
 @login_required
 @architect_required
 def word_list(request):
-    # qs = Word.objects.select_related("created_by").order_by("-updated_at")
-    qs = []  # replace with real queryset
+    qs = Word.objects.select_related("created_by").order_by("-updated_at")
     form = SearchFilterForm(request.GET)
     q = request.GET.get("q", "")
     status = request.GET.get("status", "")
     pos = request.GET.get("pos", "")
     if q:
-        pass  # qs = qs.filter(Q(text__icontains=q) | Q(translation__icontains=q))
+        qs = qs.filter(Q(text__icontains=q) | Q(translation__icontains=q))
     if status:
-        pass  # qs = qs.filter(status=status)
+        qs = qs.filter(status=status)
     if pos:
-        pass  # qs = qs.filter(part_of_speech=pos)
+        qs = qs.filter(part_of_speech=pos)
     paginator = Paginator(qs, 25)
     page = paginator.get_page(request.GET.get("page", 1))
     template = "cms/partials/word_rows.html" if request.headers.get("HX-Request") else "cms/word_list.html"
@@ -71,14 +103,14 @@ def word_create(request):
     if request.method == "POST":
         form = WordForm(request.POST)
         if form.is_valid():
-            # word = Word.objects.create(
-            #     text=form.cleaned_data["text"],
-            #     translation=form.cleaned_data["translation"],
-            #     part_of_speech=form.cleaned_data["part_of_speech"],
-            #     notes=form.cleaned_data["notes"],
-            #     status=form.cleaned_data["status"],
-            #     created_by=request.user,
-            # )
+            word = Word.objects.create(
+                text=form.cleaned_data["text"],
+                translation=form.cleaned_data["translation"],
+                part_of_speech=form.cleaned_data["part_of_speech"],
+                notes=form.cleaned_data["notes"],
+                status=form.cleaned_data["status"],
+                created_by=request.user,
+            )
             messages.success(request, "Word created successfully.")
             if request.headers.get("HX-Request"):
                 return HttpResponse(status=204, headers={"HX-Trigger": "contentChanged"})
@@ -92,19 +124,27 @@ def word_create(request):
 @login_required
 @architect_required
 def word_edit(request, pk):
-    # word = get_object_or_404(Word, pk=pk)
-    word = None  # replace
+    word = get_object_or_404(Word, pk=pk)
     if request.method == "POST":
         form = WordForm(request.POST)
         if form.is_valid():
-            # word.text = form.cleaned_data["text"] ... word.save()
+            word.text = form.cleaned_data["text"]
+            word.translation = form.cleaned_data["translation"]
+            word.part_of_speech = form.cleaned_data["part_of_speech"]
+            word.notes = form.cleaned_data["notes"]
+            word.status = form.cleaned_data["status"]
+            word.updated_at = timezone.now()
+            word.save(update_fields=["text", "translation", "part_of_speech", "notes", "status", "updated_at"])
             messages.success(request, "Word updated.")
             if request.headers.get("HX-Request"):
                 return HttpResponse(status=204, headers={"HX-Trigger": "contentChanged"})
             return redirect("cms:word_list")
     else:
-        # form = WordForm(initial={...from word...})
-        form = WordForm()
+        form = WordForm(initial={
+            "text": word.text,
+            "translation": word.translation,
+            "part_of_speech": word.part_of_speech,
+        })
     template = "cms/partials/word_form.html" if request.headers.get("HX-Request") else "cms/word_form.html"
     return render(request, template, {"form": form, "action": "Edit", "object": word, "content_type": "word"})
 
@@ -113,7 +153,7 @@ def word_edit(request, pk):
 @architect_required
 @require_POST
 def word_delete(request, pk):
-    # get_object_or_404(Word, pk=pk).delete()
+    get_object_or_404(Word, pk=pk).delete()
     messages.success(request, "Word deleted.")
     if request.headers.get("HX-Request"):
         return HttpResponse(status=200, headers={"HX-Trigger": "contentChanged"})
@@ -126,8 +166,8 @@ def word_delete(request, pk):
 def word_status(request, pk):
     """Quick status toggle from list view."""
     new_status = request.POST.get("status")
-    # word = get_object_or_404(Word, pk=pk)
-    # word.status = new_status; word.save(update_fields=["status", "updated_at"])
+    word = get_object_or_404(Word, pk=pk)
+    word.status = new_status; word.save(update_fields=["status", "updated_at"])
     if request.headers.get("HX-Request"):
         return HttpResponse(status=204, headers={"HX-Trigger": "contentChanged"})
     return redirect("cms:word_list")
@@ -160,7 +200,7 @@ def phrase_create(request):
         form = PhraseForm()
     template = "cms/partials/phrase_form.html" if request.headers.get("HX-Request") else "cms/phrase_form.html"
     # Pass available words for the word-picker
-    # words = Word.objects.filter(status="published").order_by("text")
+    words = Word.objects.filter(status="published").order_by("text")
     words = []
     return render(request, template, {"form": form, "action": "Create", "words": words, "content_type": "phrase"})
 
@@ -260,8 +300,8 @@ def sentence_delete(request, pk):
 def preview(request, content_type, pk):
     """Renders a preview panel for Word, Phrase or Sentence."""
     obj = None
-    # if content_type == "word":   obj = get_object_or_404(Word, pk=pk)
-    # elif content_type == "phrase": obj = get_object_or_404(Phrase, pk=pk)
-    # elif content_type == "sentence": obj = get_object_or_404(Sentence, pk=pk)
+    if content_type == "word":   obj = get_object_or_404(Word, pk=pk)
+    elif content_type == "phrase": obj = get_object_or_404(Phrase, pk=pk)
+    elif content_type == "sentence": obj = get_object_or_404(Sentence, pk=pk)
     template = "cms/partials/preview.html"
     return render(request, template, {"obj": obj, "content_type": content_type})

@@ -1,40 +1,29 @@
 {% extends "cms/base.html" %}
-{% block title %}Phrases — LinguaForge CMS{% endblock %}
-{% block nav_phrases %}active{% endblock %}
+{% block title %}Phrases — LinguaCMS{% endblock %}
+{% block page_title %}Phrases{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm"
+  hx-get="{% url 'cms:phrase_create' %}"
+  hx-target="#modal-container"
+  hx-swap="innerHTML">
+  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  New Phrase
+</button>
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <div class="page-title">Phrases</div>
-    <div class="page-subtitle">Multi-word expressions built from vocabulary</div>
-  </div>
-  <a href="{% url 'cms:phrase_create' %}" class="btn btn-primary">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-    New Phrase
-  </a>
+<div class="section-header">
+  <div><h1>Phrases</h1><div class="section-meta">Multi-word expressions</div></div>
 </div>
-
-<form class="filter-bar" id="phrase-filters"
-      hx-get="{% url 'cms:phrase_list' %}"
-      hx-trigger="input changed delay:300ms from:#q-phrases, change from:.phrase-filter-select"
-      hx-target="#phrase-table-wrap"
-      hx-include="#phrase-filters">
-
-  <div class="search-input-wrap">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" name="q" id="q-phrases" value="{{ q }}" placeholder="Search phrases…" class="search-input" autocomplete="off">
+<form class="cms-toolbar" hx-get="{% url 'cms:phrase_list' %}" hx-target="#content-list" hx-trigger="change" hx-push-url="true">
+  <div class="search-wrapper">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/></svg>
+    {{ form.q }}
   </div>
-
-  <select name="status" class="filter-select phrase-filter-select">
-    <option value="">All statuses</option>
-    <option value="draft"     {% if status == "draft"     %}selected{% endif %}>Draft</option>
-    <option value="published" {% if status == "published" %}selected{% endif %}>Published</option>
-  </select>
-
-  <div class="htmx-indicator"><div class="spinner"></div></div>
+  {{ form.status }}
 </form>
-
-<div class="card" id="phrase-table-wrap">
-  {% include "cms/partials/phrase_table.html" %}
+<div id="content-list" hx-get="{% url 'cms:phrase_list' %}" hx-trigger="contentChanged from:body" hx-target="#content-list" hx-swap="outerHTML">
+  {% include "cms/partials/phrase_rows.html" %}
 </div>
 {% endblock %}

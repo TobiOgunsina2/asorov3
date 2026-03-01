@@ -1,0 +1,51 @@
+{% extends "cms/base.html" %}
+{% block title %}{{ lesson.title }} — LinguaForge CMS{% endblock %}
+{% block nav_units %}active{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+  <a href="{% url 'cms:unit_list' %}" style="color: var(--ink-muted); text-decoration: none;">Units</a>
+  <span>›</span>
+  <a href="{% url 'cms:unit_detail' lesson.group.unit.pk %}" style="color: var(--ink-muted); text-decoration: none;">{{ lesson.group.unit.title }}</a>
+  <span>›</span>
+  <span style="color: var(--ink-muted);">{{ lesson.group.title }}</span>
+  <span>›</span>
+  <span style="color: var(--ink);">{{ lesson.title }}</span>
+</div>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ lesson.title }}</div>
+    {% if lesson.description %}
+    <div class="page-subtitle">{{ lesson.description }}</div>
+    {% endif %}
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <a href="{% url 'cms:lesson_edit' lesson.pk %}" class="btn btn-secondary">Edit Lesson</a>
+    <a href="{% url 'cms:slide_create' lesson.pk %}" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add Slide
+    </a>
+  </div>
+</div>
+
+<!-- Slide count summary -->
+<div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+  <div style="font-size: 0.85rem; color: var(--ink-muted);">
+    <span style="font-family: var(--font-display); font-weight: 700; color: var(--ink); font-size: 1.1rem;">{{ lesson.slides.count }}</span>
+    slide{{ lesson.slides.count|pluralize }}
+  </div>
+  {% regroup lesson.slides.all by slide_type as type_groups %}
+  {% for tg in type_groups %}
+  <span style="font-size: 0.78rem; background: var(--amber-light); color: var(--amber); border-radius: 4px; padding: 2px 9px; font-family: var(--font-display); font-weight: 600;">
+    {{ tg.grouper }} <span style="opacity: 0.7;">× {{ tg.list|length }}</span>
+  </span>
+  {% endfor %}
+</div>
+
+<!-- Slide list -->
+<div id="slide-list">
+  {% include "cms/partials/slide_list.html" with lesson=lesson slides=lesson.slides.all %}
+</div>
+{% endblock %}

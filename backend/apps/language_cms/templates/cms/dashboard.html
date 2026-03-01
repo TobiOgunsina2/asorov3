@@ -1,85 +1,171 @@
 {% extends "cms/base.html" %}
-{% block title %}Dashboard — LinguaCMS{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Dashboard — LinguaForge CMS{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
 
 {% block content %}
-<div class="section-header">
+<div class="page-header">
   <div>
-    <h1>Content Overview</h1>
-    <div class="section-meta">All content managed by your team</div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">Overview of all language content</div>
   </div>
 </div>
 
-<!-- Stats Grid -->
-<div class="stats-grid">
+<!-- ── Curriculum Stats ──────────────────────────────────── -->
+<div style="font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px;">Curriculum</div>
 
-  <div class="stat-card words">
+<div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 32px;">
+
+  <div class="stat-card">
+    <div class="stat-label">Units</div>
+    <div class="stat-number">{{ stats.units }}</div>
+    <div style="margin-top: 16px;">
+      <a href="{% url 'cms:unit_list' %}" class="btn btn-secondary btn-sm">View all →</a>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Lesson Groups</div>
+    <div class="stat-number">{{ stats.lesson_groups }}</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Lessons</div>
+    <div class="stat-number">{{ stats.lessons }}</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Slides</div>
+    <div class="stat-number">{{ stats.slides }}</div>
+    <div class="stat-meta" style="margin-top: 8px; flex-wrap: wrap; gap: 6px;">
+      {% for slide_type, count in stats.slide_type_breakdown.items %}
+      <span style="font-size: 0.72rem; background: var(--amber-light); color: var(--amber); border-radius: 4px; padding: 1px 7px; font-family: var(--font-display); font-weight: 600;">
+        {{ slide_type }} <span style="opacity:0.7;">×{{ count }}</span>
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Vocabulary Stats ──────────────────────────────────── -->
+<div style="font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px;">Vocabulary</div>
+
+<div class="stat-grid" style="margin-bottom: 32px;">
+
+  <div class="stat-card">
     <div class="stat-label">Words</div>
     <div class="stat-number">{{ stats.words.total }}</div>
-    <div class="stat-breakdown">
-      <span class="stat-pill pill-draft">{{ stats.words.draft }} Draft</span>
-      <span class="stat-pill pill-review">{{ stats.words.review }} Review</span>
-      <span class="stat-pill pill-published">{{ stats.words.published }} Live</span>
+    <div class="stat-meta">
+      <div class="stat-meta-item"><span>{{ stats.words.published }}</span> published</div>
+      <div class="stat-meta-item"><span>{{ stats.words.draft }}</span> drafts</div>
     </div>
-    <a href="{% url 'cms:word_list' %}" style="display:block;margin-top:16px;font-size:0.8rem;color:var(--amber);text-decoration:none;font-weight:500;">Manage words →</a>
+    <div style="margin-top: 16px;">
+      <a href="{% url 'cms:word_list' %}" class="btn btn-secondary btn-sm">View all →</a>
+    </div>
   </div>
 
-  <div class="stat-card phrases">
+  <div class="stat-card">
     <div class="stat-label">Phrases</div>
     <div class="stat-number">{{ stats.phrases.total }}</div>
-    <div class="stat-breakdown">
-      <span class="stat-pill pill-draft">{{ stats.phrases.draft }} Draft</span>
-      <span class="stat-pill pill-review">{{ stats.phrases.review }} Review</span>
-      <span class="stat-pill pill-published">{{ stats.phrases.published }} Live</span>
+    <div class="stat-meta">
+      <div class="stat-meta-item"><span>{{ stats.phrases.published }}</span> published</div>
+      <div class="stat-meta-item"><span>{{ stats.phrases.draft }}</span> drafts</div>
     </div>
-    <a href="{% url 'cms:phrase_list' %}" style="display:block;margin-top:16px;font-size:0.8rem;color:var(--blue);text-decoration:none;font-weight:500;">Manage phrases →</a>
+    <div style="margin-top: 16px;">
+      <a href="{% url 'cms:phrase_list' %}" class="btn btn-secondary btn-sm">View all →</a>
+    </div>
   </div>
 
-  <div class="stat-card sentences">
+  <div class="stat-card">
     <div class="stat-label">Sentences</div>
     <div class="stat-number">{{ stats.sentences.total }}</div>
-    <div class="stat-breakdown">
-      <span class="stat-pill pill-draft">{{ stats.sentences.draft }} Draft</span>
-      <span class="stat-pill pill-review">{{ stats.sentences.review }} Review</span>
-      <span class="stat-pill pill-published">{{ stats.sentences.published }} Live</span>
+    <div class="stat-meta">
+      <div class="stat-meta-item"><span>{{ stats.sentences.published }}</span> published</div>
+      <div class="stat-meta-item"><span>{{ stats.sentences.draft }}</span> drafts</div>
     </div>
-    <a href="{% url 'cms:sentence_list' %}" style="display:block;margin-top:16px;font-size:0.8rem;color:var(--green);text-decoration:none;font-weight:500;">Manage sentences →</a>
+    <div style="margin-top: 16px;">
+      <a href="{% url 'cms:sentence_list' %}" class="btn btn-secondary btn-sm">View all →</a>
+    </div>
   </div>
 
 </div>
 
-<!-- Quick create -->
-<div class="section-header" style="margin-top:8px;">
-  <div>
-    <h1>Quick Create</h1>
-    <div class="section-meta">Add new content items</div>
-  </div>
-</div>
+<!-- ── Quick Create ──────────────────────────────────────── -->
+<div style="font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px;">Quick Create</div>
 
-<div style="display:flex;gap:12px;flex-wrap:wrap;">
-  <button class="btn btn-primary"
-    hx-get="{% url 'cms:word_create' %}"
-    hx-target="#modal-container"
-    hx-swap="innerHTML"
-    onclick="openModal('create-modal')">
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 32px;">
+  <a href="{% url 'cms:unit_create' %}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
+    New Unit
+  </a>
+  <a href="{% url 'cms:word_create' %}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
     New Word
-  </button>
-  <button class="btn btn-ghost"
-    hx-get="{% url 'cms:phrase_create' %}"
-    hx-target="#modal-container"
-    hx-swap="innerHTML"
-    onclick="openModal('create-modal')">
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  </a>
+  <a href="{% url 'cms:phrase_create' %}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
     New Phrase
-  </button>
-  <button class="btn btn-ghost"
-    hx-get="{% url 'cms:sentence_create' %}"
-    hx-target="#modal-container"
-    hx-swap="innerHTML"
-    onclick="openModal('create-modal')">
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  </a>
+  <a href="{% url 'cms:sentence_create' %}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
     New Sentence
-  </button>
+  </a>
+</div>
+
+<!-- ── Recent Activity ───────────────────────────────────── -->
+<div style="font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px;">Recent</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+  <!-- Recent Lessons -->
+  <div class="card">
+    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-family: var(--font-display); font-weight: 700; font-size: 0.85rem;">Recent Lessons</div>
+      <a href="{% url 'cms:unit_list' %}" class="btn btn-secondary btn-sm">Browse →</a>
+    </div>
+    <div>
+      {% for lesson in recent_lessons %}
+      <div style="padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+        <div style="flex: 1; min-width: 0;">
+          <a href="{% url 'cms:lesson_detail' lesson.pk %}"
+             style="font-weight: 500; font-size: 0.875rem; color: var(--ink); text-decoration: none;">
+            {{ lesson.title }}
+          </a>
+          <div style="font-size: 0.75rem; color: var(--ink-muted); margin-top: 2px;">
+            {{ lesson.group.unit.title }} › {{ lesson.group.title }}
+          </div>
+        </div>
+        <span style="font-size: 0.75rem; color: var(--ink-faint); flex-shrink: 0;">{{ lesson.slides.count }} slides</span>
+      </div>
+      {% empty %}
+      <div style="padding: 20px; text-align: center; color: var(--ink-muted); font-size: 0.85rem;">No lessons yet</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Vocabulary -->
+  <div class="card">
+    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-family: var(--font-display); font-weight: 700; font-size: 0.85rem;">Recent Words</div>
+      <a href="{% url 'cms:word_list' %}" class="btn btn-secondary btn-sm">Browse →</a>
+    </div>
+    <div>
+      {% for word in recent_words %}
+      <div style="padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 500; font-size: 0.875rem;">{{ word.text }}</div>
+          <div style="font-size: 0.78rem; color: var(--ink-muted);">{{ word.translation }}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <span class="badge-pos" style="font-size: 0.65rem;">{{ word.part_of_speech }}</span>
+          <span class="badge badge-{{ word.status }}">{{ word.get_status_display }}</span>
+        </div>
+      </div>
+      {% empty %}
+      <div style="padding: 20px; text-align: center; color: var(--ink-muted); font-size: 0.85rem;">No words yet</div>
+      {% endfor %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

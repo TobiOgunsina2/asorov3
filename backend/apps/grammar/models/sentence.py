@@ -4,9 +4,17 @@ from django.contrib.contenttypes.models import ContentType
 from apps.language_cms.models import CMSContentMixin
 
 
-# A sentence is composed of words and phrases
-# Content Mixin allows for draft/review/published status, creator tracking, and internal notes. Add to Phrase and Sentence as well.
+# Content Mixin adds:
+#   draft
+#   review
+#   published status, 
+#   creator tracking, 
+#   and internal notes. 
 class Sentence(CMSContentMixin, models.Model):
+    """
+    Sentences have their own text and translation, 
+    but also contain words and phrases which can be highlighted in the sentence.
+    """
     text = models.CharField(max_length=255)
     translation = models.CharField(max_length=255)
     # media = GenericRelation(Media)

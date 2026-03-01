@@ -1,0 +1,66 @@
+{% extends "cms/base.html" %}
+{% block title %}Units — LinguaForge CMS{% endblock %}
+{% block nav_units %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Units</div>
+    <div class="page-subtitle">Top-level curriculum containers</div>
+  </div>
+  <a href="{% url 'cms:unit_create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    New Unit
+  </a>
+</div>
+
+{% if units %}
+<div style="display: flex; flex-direction: column; gap: 12px;">
+  {% for unit in units %}
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--border);">
+      <div style="flex: 1;">
+        <a href="{% url 'cms:unit_detail' unit.pk %}" style="font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); text-decoration: none;">
+          {{ unit.title }}
+        </a>
+        {% if unit.description %}
+        <div style="font-size: 0.83rem; color: var(--ink-muted); margin-top: 3px;">{{ unit.description|truncatewords:20 }}</div>
+        {% endif %}
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 0.8rem; color: var(--ink-muted);">
+          {{ unit.lesson_groups.count }} group{{ unit.lesson_groups.count|pluralize }}
+        </span>
+        <a href="{% url 'cms:unit_edit' unit.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+        <form method="post" action="{% url 'cms:unit_delete' unit.pk %}" style="display:inline;"
+              onsubmit="return confirm('Delete unit \'{{ unit.title }}\'? This will delete all lessons and slides inside.')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        </form>
+      </div>
+    </div>
+    <!-- Lesson group summary -->
+    {% if unit.lesson_groups.all %}
+    <div style="padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 8px;">
+      {% for group in unit.lesson_groups.all %}
+      <span style="font-size: 0.8rem; background: var(--paper); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; color: var(--ink-muted);">
+        {{ group.title }}
+        <span style="color: var(--ink-faint);">· {{ group.lessons.count }} lesson{{ group.lessons.count|pluralize }}</span>
+      </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-icon">📚</div>
+    <p>No units yet. Create your first unit to start building curriculum.</p>
+    <a href="{% url 'cms:unit_create' %}" class="btn btn-primary btn-sm">Create Unit</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -16,7 +16,13 @@ PART_OF_SPEECH_CHOICES = [
     ('question', 'Question'),
 ]
 
-# Content Mixin allows for draft/review/published status, creator tracking, and internal notes. Add to Phrase and Sentence as well.
+# Content Mixin adds:
+#   draft
+#   review
+#   published status, 
+#   creator tracking, 
+#   and internal notes. 
+
 class Word(CMSContentMixin, models.Model):
     text = models.CharField(max_length=100)
     translation = models.CharField(max_length=255)

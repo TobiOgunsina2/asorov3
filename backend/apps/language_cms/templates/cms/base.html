@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}LinguaCMS{% endblock %}</title>
+  <title>{% block title %}ASOROCMS{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'cms/css/cms.css' %}">
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
@@ -15,7 +15,7 @@
   <!-- ── Sidebar ─────────────────────────────────────────── -->
   <aside class="cms-sidebar">
     <div class="sidebar-brand">
-      <div class="brand-title">Lingua<br>CMS</div>
+      <div class="brand-title">ASORO<br>CMS</div>
       <div class="brand-subtitle">Content Studio</div>
     </div>
 
@@ -58,6 +58,21 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h10"/>
             </svg>
             Sentences
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Curriculum -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Curriculum</div>
+      <ul class="sidebar-nav">
+        <li>
+          <a href="{% url 'cms:unit_list' %}" class="{% if 'unit' in request.resolver_match.url_name or 'lesson' in request.resolver_match.url_name or 'slide' in request.resolver_match.url_name or 'group' in request.resolver_match.url_name %}active{% endif %}">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            Units & Lessons
           </a>
         </li>
       </ul>
@@ -111,5 +126,16 @@
 
 <script src="{% static 'cms/js/cms.js' %}"></script>
 {% block extra_js %}{% endblock %}
+<script>
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  document.body.addEventListener('htmx:configRequest', e => {
+    e.detail.headers['X-CSRFToken'] = getCookie('csrftoken');
+  });
+</script>
 </body>
 </html>

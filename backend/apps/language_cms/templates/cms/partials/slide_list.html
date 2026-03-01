@@ -1,0 +1,75 @@
+{% if slides %}
+<div style="display: flex; flex-direction: column; gap: 10px;">
+  {% for slide in slides %}
+  <div class="card" style="padding: 0; overflow: hidden;" id="slide-{{ slide.pk }}">
+    <div style="display: grid; grid-template-columns: 48px 1fr auto; align-items: stretch;">
+
+      <!-- Order handle -->
+      <div style="background: var(--paper); border-right: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; cursor: grab; padding: 16px 0;">
+        <span style="font-family: var(--font-display); font-weight: 700; font-size: 0.8rem; color: var(--ink-muted);">{{ slide.order }}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" style="color: var(--ink-faint);">
+          <path d="M9 5h6M9 9h6M9 13h6M9 17h6"/>
+        </svg>
+      </div>
+
+      <!-- Slide info -->
+      <div style="padding: 14px 18px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span class="badge-pos">{{ slide.slide_type }}</span>
+          {% if slide.title %}
+          <span style="font-weight: 500; font-size: 0.9rem;">{{ slide.title }}</span>
+          {% endif %}
+        </div>
+        <!-- Content summary -->
+        <div style="display: flex; gap: 12px; font-size: 0.78rem; color: var(--ink-muted); flex-wrap: wrap;">
+          {% if slide.slide_words.count %}
+          <span>{{ slide.slide_words.count }} word{{ slide.slide_words.count|pluralize }}</span>
+          {% endif %}
+          {% if slide.slide_phrases.count %}
+          <span>{{ slide.slide_phrases.count }} phrase{{ slide.slide_phrases.count|pluralize }}</span>
+          {% endif %}
+          {% if slide.slide_sentences.count %}
+          <span>{{ slide.slide_sentences.count }} sentence{{ slide.slide_sentences.count|pluralize }}</span>
+          {% endif %}
+
+          {% if slide.slide_type == 'MultipleChoice' and slide.mc_content %}
+          <span style="color: var(--jade);">✓ MC options configured</span>
+          {% endif %}
+          {% if slide.slide_type == 'TrueFalse' and slide.tf_content %}
+          <span style="color: var(--jade);">✓ T/F configured</span>
+          {% endif %}
+          {% if slide.slide_type == 'FillInBlank' and slide.fib_content %}
+          <span style="color: var(--jade);">✓ Blanks configured</span>
+          {% endif %}
+          {% if slide.slide_type == 'BuildBlock' and slide.bb_content %}
+          <span style="color: var(--jade);">✓ Build block configured</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="padding: 14px 16px; display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border);">
+        <a href="{% url 'cms:slide_edit' slide.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+        <button class="btn btn-danger btn-sm"
+                hx-post="{% url 'cms:slide_delete' slide.pk %}"
+                hx-target="#slide-{{ slide.pk }}"
+                hx-swap="outerHTML swap:0.2s"
+                hx-confirm="Delete this {{ slide.slide_type }} slide?">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-icon">🎞</div>
+    <p>No slides yet. Click "Add Slide" to build this lesson.</p>
+    <a href="{% url 'cms:slide_create' lesson.pk %}" class="btn btn-primary btn-sm">Add Slide</a>
+  </div>
+</div>
+{% endif %}

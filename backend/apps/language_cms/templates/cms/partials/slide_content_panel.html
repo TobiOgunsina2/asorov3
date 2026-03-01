@@ -1,0 +1,243 @@
+{% comment %}
+Dynamic panel loaded by HTMX when slide_type changes.
+slide_type: string
+content_data: dict of pre-populated values (edit mode)
+sentences: queryset of published sentences
+{% endcomment %}
+
+{% if slide_type == 'MultipleChoice' or slide_type == 'TrueFalse' %}
+<div class="form-card" style="margin-top: 0;">
+  <div class="form-card-title">
+    {% if slide_type == 'MultipleChoice' %}Multiple Choice{% else %}True / False{% endif %} Content
+  </div>
+
+  <div class="form-group" style="margin-bottom: 16px;">
+    <label class="form-label">Question</label>
+    <input type="text"
+           name="{% if slide_type == 'MultipleChoice' %}mc_question{% else %}tf_question{% endif %}"
+           class="form-control"
+           value="{{ content_data.mc_question|default:content_data.tf_question|default:'' }}"
+           placeholder="e.g. Which word means 'to run'?">
+  </div>
+
+  <div class="form-label" style="margin-bottom: 10px;">Options</div>
+  <div id="options-list">
+    {% with options=content_data.mc_options|default:content_data.tf_options %}
+    {% if options %}
+      {% for opt in options %}
+      <div class="option-row" style="display: grid; grid-template-columns: 1fr 100px 36px; gap: 10px; align-items: center; margin-bottom: 8px;">
+        <input type="text" name="option_text_{{ forloop.counter0 }}"
+               class="form-control" value="{{ opt.text }}" placeholder="Option text…" required>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+          <input type="checkbox" name="option_correct_{{ forloop.counter0 }}"
+                 {% if opt.is_correct %}checked{% endif %}
+                 style="accent-color: var(--jade);">
+          Correct
+        </label>
+        <button type="button" class="btn btn-danger btn-icon btn-sm" onclick="removeOption(this)">×</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <!-- Default 2 options -->
+      {% for i in "01" %}
+      <div class="option-row" style="display: grid; grid-template-columns: 1fr 100px 36px; gap: 10px; align-items: center; margin-bottom: 8px;">
+        <input type="text" name="option_text_{{ forloop.counter0 }}"
+               class="form-control" placeholder="Option {{ forloop.counter }}…" required>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+          <input type="checkbox" name="option_correct_{{ forloop.counter0 }}"
+                 style="accent-color: var(--jade);">
+          Correct
+        </label>
+        <button type="button" class="btn btn-danger btn-icon btn-sm" onclick="removeOption(this)">×</button>
+      </div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="addOption()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>
+    Add Option
+  </button>
+</div>
+
+{% elif slide_type == 'FillInBlank' %}
+<div class="form-card" style="margin-top: 0;">
+  <div class="form-card-title">Fill in the Blank Content</div>
+
+  <div class="form-group" style="margin-bottom: 16px;">
+    <label class="form-label">Source Sentence</label>
+    <select name="fib_sentence_id" class="form-control">
+      <option value="">— Select sentence —</option>
+      {% for sentence in sentences %}
+      <option value="{{ sentence.pk }}" {% if content_data.fib_sentence_id == sentence.pk %}selected{% endif %}>
+        {{ sentence.text }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-label" style="margin-bottom: 10px;">Blank Ranges <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-muted);">(character offsets)</span></div>
+  <div id="blanks-list">
+    {% if content_data.fib_blanks %}
+      {% for blank in content_data.fib_blanks %}
+      <div class="blank-row" style="display: grid; grid-template-columns: 1fr 1fr 36px; gap: 10px; align-items: center; margin-bottom: 8px;">
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label" style="font-size: 0.65rem;">Start</label>
+          <input type="number" name="blank_start_{{ forloop.counter0 }}" class="form-control" value="{{ blank.start }}" min="0">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label" style="font-size: 0.65rem;">End</label>
+          <input type="number" name="blank_end_{{ forloop.counter0 }}" class="form-control" value="{{ blank.end }}" min="0">
+        </div>
+        <button type="button" class="btn btn-danger btn-icon btn-sm" style="align-self: end; margin-bottom: 2px;" onclick="removeBlank(this)">×</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="blank-row" style="display: grid; grid-template-columns: 1fr 1fr 36px; gap: 10px; align-items: center; margin-bottom: 8px;">
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label" style="font-size: 0.65rem;">Start</label>
+          <input type="number" name="blank_start_0" class="form-control" value="" min="0" placeholder="0">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label" style="font-size: 0.65rem;">End</label>
+          <input type="number" name="blank_end_0" class="form-control" value="" min="0" placeholder="5">
+        </div>
+        <button type="button" class="btn btn-danger btn-icon btn-sm" style="align-self: end; margin-bottom: 2px;" onclick="removeBlank(this)">×</button>
+      </div>
+    {% endif %}
+  </div>
+  <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="addBlank()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>
+    Add Blank
+  </button>
+</div>
+
+{% elif slide_type == 'BuildBlock' %}
+<div class="form-card" style="margin-top: 0;">
+  <div class="form-card-title">Build Block Content</div>
+
+  <div class="form-group" style="margin-bottom: 16px;">
+    <label class="form-label">Source Sentence</label>
+    <select name="bb_sentence_id" class="form-control" id="bb-sentence-select" onchange="updateBuildBlockPreview()">
+      <option value="">— Select sentence —</option>
+      {% for sentence in sentences %}
+      <option value="{{ sentence.pk }}"
+              data-text="{{ sentence.text }}"
+              {% if content_data.bb_sentence_id == sentence.pk %}selected{% endif %}>
+        {{ sentence.text }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Word Order Override <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-muted);">(JSON array, optional)</span></label>
+    <input type="text" name="bb_word_order" class="form-control" id="bb-word-order"
+           value="{{ content_data.bb_word_order|default:'' }}"
+           placeholder='e.g. [2, 0, 1, 3] — indices to shuffle word order'>
+    <div style="font-size: 0.78rem; color: var(--ink-faint); margin-top: 4px;">
+      Leave blank to use natural word order from the sentence.
+    </div>
+  </div>
+</div>
+
+{% elif slide_type == 'Intro' or slide_type == 'MediaIntro' or slide_type == 'ReadParagraph' %}
+<div class="form-card" style="margin-top: 0;">
+  <div class="form-card-title">{{ slide_type }} Slide</div>
+  <div style="font-size: 0.85rem; color: var(--ink-muted); padding: 8px 0;">
+    This slide type uses the vocabulary attached in the right panel. No additional configuration required.
+  </div>
+</div>
+
+{% elif slide_type == 'Speaking' or slide_type == 'TypeWord' or slide_type == 'Sketch' or slide_type == 'TextResponse' or slide_type == 'ToneMarking' or slide_type == 'Crossword' or slide_type == 'MatchPairs' %}
+<div class="form-card" style="margin-top: 0;">
+  <div class="form-card-title">{{ slide_type }} Slide</div>
+  <div style="font-size: 0.85rem; color: var(--ink-muted); padding: 8px 0;">
+    This slide type is driven by the vocabulary attached in the right panel.
+    Extended configuration for <strong>{{ slide_type }}</strong> can be added here when needed.
+  </div>
+</div>
+
+{% elif slide_type %}
+<div class="form-card" style="margin-top: 0; border: 1px dashed var(--border);">
+  <div style="font-size: 0.85rem; color: var(--ink-muted); padding: 8px 0; text-align: center;">
+    No extra configuration needed for <strong>{{ slide_type }}</strong>.
+  </div>
+</div>
+{% endif %}
+
+<script>
+  // ── Multiple Choice / True-False option builder ──────────
+  function getOptionCount() {
+    return document.querySelectorAll('.option-row').length;
+  }
+
+  function addOption() {
+    const list = document.getElementById('options-list');
+    const idx = getOptionCount();
+    const row = document.createElement('div');
+    row.className = 'option-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 100px 36px; gap: 10px; align-items: center; margin-bottom: 8px;';
+    row.innerHTML = `
+      <input type="text" name="option_text_${idx}" class="form-control" placeholder="Option text…" required>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);">
+        <input type="checkbox" name="option_correct_${idx}" style="accent-color: var(--jade);">
+        Correct
+      </label>
+      <button type="button" class="btn btn-danger btn-icon btn-sm" onclick="removeOption(this)">×</button>
+    `;
+    list.appendChild(row);
+    reindexOptions();
+  }
+
+  function removeOption(btn) {
+    btn.closest('.option-row').remove();
+    reindexOptions();
+  }
+
+  function reindexOptions() {
+    document.querySelectorAll('.option-row').forEach((row, i) => {
+      row.querySelector('input[type="text"]').name   = `option_text_${i}`;
+      row.querySelector('input[type="checkbox"]').name = `option_correct_${i}`;
+    });
+  }
+
+  // ── Fill in Blank builder ────────────────────────────────
+  function getBlankCount() {
+    return document.querySelectorAll('.blank-row').length;
+  }
+
+  function addBlank() {
+    const list = document.getElementById('blanks-list');
+    const idx = getBlankCount();
+    const row = document.createElement('div');
+    row.className = 'blank-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 36px; gap: 10px; align-items: center; margin-bottom: 8px;';
+    row.innerHTML = `
+      <div class="form-group" style="margin:0;">
+        <label class="form-label" style="font-size:0.65rem;">Start</label>
+        <input type="number" name="blank_start_${idx}" class="form-control" min="0" placeholder="0">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label" style="font-size:0.65rem;">End</label>
+        <input type="number" name="blank_end_${idx}" class="form-control" min="0" placeholder="5">
+      </div>
+      <button type="button" class="btn btn-danger btn-icon btn-sm" style="align-self:end;margin-bottom:2px;" onclick="removeBlank(this)">×</button>
+    `;
+    list.appendChild(row);
+  }
+
+  function removeBlank(btn) {
+    btn.closest('.blank-row').remove();
+    reindexBlanks();
+  }
+
+  function reindexBlanks() {
+    document.querySelectorAll('.blank-row').forEach((row, i) => {
+      const inputs = row.querySelectorAll('input[type="number"]');
+      inputs[0].name = `blank_start_${i}`;
+      inputs[1].name = `blank_end_${i}`;
+    });
+  }
+</script>

@@ -1,0 +1,79 @@
+{% if groups %}
+  {% for group in groups %}
+  <div class="card" style="margin-bottom: 16px;" id="group-{{ group.pk }}">
+
+    <!-- Group header -->
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--paper); border-radius: var(--radius-md) var(--radius-md) 0 0;">
+      <div style="font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; flex: 1;">
+        {{ group.title }}
+        <span style="font-weight: 400; color: var(--ink-faint); font-size: 0.78rem; margin-left: 8px;">order {{ group.order }}</span>
+      </div>
+      <button class="btn btn-secondary btn-sm"
+              hx-get="{% url 'cms:lesson_group_edit' group.pk %}"
+              hx-target="#group-inline-form-{{ group.pk }}"
+              hx-swap="innerHTML">
+        Edit
+      </button>
+      <button class="btn btn-danger btn-sm"
+              hx-post="{% url 'cms:lesson_group_delete' group.pk %}"
+              hx-target="#lesson-group-list"
+              hx-swap="innerHTML"
+              hx-confirm="Delete group '{{ group.title }}' and all its lessons?">
+        Delete
+      </button>
+      <button class="btn btn-primary btn-sm"
+              hx-get="{% url 'cms:lesson_create' group.pk %}"
+              hx-target="#group-inline-form-{{ group.pk }}"
+              hx-swap="innerHTML">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>
+        Add Lesson
+      </button>
+    </div>
+
+    <!-- Inline form slot -->
+    <div id="group-inline-form-{{ group.pk }}"></div>
+
+    <!-- Lessons -->
+    {% if group.lessons.all %}
+    <div>
+      {% for lesson in group.lessons.all %}
+      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 20px; border-bottom: 1px solid var(--border);">
+        <div style="color: var(--ink-faint); font-size: 0.75rem; width: 32px; text-align: right; flex-shrink: 0;">{{ lesson.order }}</div>
+        <div style="flex: 1; min-width: 0;">
+          <a href="{% url 'cms:lesson_detail' lesson.pk %}"
+             style="font-weight: 500; color: var(--ink); text-decoration: none; font-size: 0.9rem;">
+            {{ lesson.title }}
+          </a>
+          {% if lesson.description %}
+          <div style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px;">{{ lesson.description|truncatewords:12 }}</div>
+          {% endif %}
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <span style="font-size: 0.78rem; color: var(--ink-muted);">{{ lesson.slides.count }} slide{{ lesson.slides.count|pluralize }}</span>
+          <a href="{% url 'cms:lesson_detail' lesson.pk %}" class="btn btn-secondary btn-sm">Open →</a>
+          <form method="post" action="{% url 'cms:lesson_delete' lesson.pk %}" style="display:inline;"
+                onsubmit="return confirm('Delete lesson \'{{ lesson.title }}\'?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding: 20px 24px; color: var(--ink-faint); font-size: 0.83rem; text-align: center;">
+      No lessons yet — click "Add Lesson" to create one.
+    </div>
+    {% endif %}
+
+  </div>
+  {% endfor %}
+
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-icon">🗂</div>
+    <p>No lesson groups yet. Click "Add Group" to create one.</p>
+  </div>
+</div>
+{% endif %}

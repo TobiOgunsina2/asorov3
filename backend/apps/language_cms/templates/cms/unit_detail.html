@@ -1,0 +1,52 @@
+{% extends "cms/base.html" %}
+{% block title %}{{ unit.title }} — LinguaForge CMS{% endblock %}
+{% block nav_units %}active{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+  <a href="{% url 'cms:unit_list' %}" style="color: var(--ink-muted); text-decoration: none;">Units</a>
+  <span>›</span>
+  <span style="color: var(--ink);">{{ unit.title }}</span>
+</div>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ unit.title }}</div>
+    {% if unit.description %}
+    <div class="page-subtitle">{{ unit.description }}</div>
+    {% endif %}
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <a href="{% url 'cms:unit_edit' unit.pk %}" class="btn btn-secondary">Edit Unit</a>
+    <button class="btn btn-primary"
+            hx-get="{% url 'cms:lesson_group_create' unit.pk %}"
+            hx-target="#group-form-slot"
+            hx-swap="innerHTML">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add Group
+    </button>
+  </div>
+</div>
+
+<!-- Inline form slot for new group -->
+<div id="group-form-slot" style="margin-bottom: 20px;"></div>
+
+<!-- Lesson Groups -->
+<div id="lesson-group-list">
+  {% include "cms/partials/lesson_group_list.html" with unit=unit groups=unit.lesson_groups.all %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Close inline forms when clicking outside
+  document.addEventListener('click', e => {
+    const slot = document.getElementById('group-form-slot');
+    if (slot && !slot.contains(e.target) && !e.target.closest('[hx-get]')) {
+      // only close if clicking completely outside
+    }
+  });
+</script>
+{% endblock %}

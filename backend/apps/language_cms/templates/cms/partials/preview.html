@@ -1,0 +1,72 @@
+<div class="modal-overlay" style="display:flex" id="preview-modal">
+  <div class="modal-panel" style="width:500px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Content Preview</div>
+        <div class="modal-subtitle">{{ content_type|capfirst }}</div>
+      </div>
+      <button class="btn-icon" onclick="closeModal('preview-modal')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      {% if obj %}
+      <div class="preview-type-label">{{ content_type|upper }}</div>
+      <div class="preview-text">{{ obj.text }}</div>
+      <div class="preview-translation">{{ obj.translation }}</div>
+      <div class="preview-meta" style="margin-top:12px">
+        <span class="badge badge-{{ obj.status }}">{{ obj.get_status_display }}</span>
+        {% if content_type == 'word' %}
+        <span class="badge badge-{{ obj.part_of_speech }}">{{ obj.get_part_of_speech_display }}</span>
+        {% elif content_type == 'phrase' %}
+        <span style="font-size:0.78rem;color:var(--ink-muted)">{{ obj.words.count }} word{{ obj.words.count|pluralize }}</span>
+        {% elif content_type == 'sentence' %}
+        <span style="font-size:0.78rem;color:var(--ink-muted)">{{ obj.components.count }} component{{ obj.components.count|pluralize }}</span>
+        {% endif %}
+      </div>
+
+      {% if content_type == 'sentence' and obj.components.exists %}
+      <div style="margin-top:20px">
+        <div style="font-family:'DM Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);margin-bottom:8px">Components</div>
+        {% for comp in obj.components.all %}
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--parchment);border-radius:var(--radius);margin-bottom:6px;font-size:0.82rem">
+          <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--amber);min-width:24px">{{ comp.order }}</span>
+          <span style="font-weight:500">{{ comp.content_object.text }}</span>
+          <span style="color:var(--ink-muted);font-style:italic">{{ comp.content_object.translation }}</span>
+          {% if comp.highlight_start is not None %}
+          <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--blue);margin-left:auto">[{{ comp.highlight_start }}–{{ comp.highlight_end }}]</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if obj.notes %}
+      <div style="margin-top:16px;padding:10px 14px;background:var(--amber-pale);border-radius:var(--radius);border-left:3px solid var(--amber)">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--amber);margin-bottom:4px">Architect Notes</div>
+        <div style="font-size:0.82rem;color:var(--ink-soft)">{{ obj.notes }}</div>
+      </div>
+      {% endif %}
+
+      <div style="margin-top:16px;font-size:0.75rem;color:var(--border);font-family:'DM Mono',monospace">
+        Created {{ obj.created_at|date:"M d, Y" }} by {{ obj.created_by.get_short_name|default:obj.created_by.username|default:"—" }}
+        · Updated {{ obj.updated_at|date:"M d, Y" }}
+      </div>
+
+      {% else %}
+      <div style="text-align:center;padding:32px;color:var(--ink-muted)">
+        <div style="font-size:2rem;margin-bottom:8px">🔍</div>
+        <p>Content not found.</p>
+      </div>
+      {% endif %}
+    </div>
+    <div class="modal-footer">
+      {% if obj %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'cms:'|add:content_type|add:'_edit' obj.pk %}">Edit</a>
+      {% endif %}
+      <button class="btn btn-primary btn-sm" onclick="closeModal('preview-modal')">Close</button>
+    </div>
+  </div>
+</div>

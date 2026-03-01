@@ -6,9 +6,10 @@ from django.forms import inlineformset_factory
 # We use string references here so this file is portable.
 # Replace the imports below with your real model imports.
 #
-
-
-from apps.grammar.models.word import PART_OF_SPEECH_CHOICES
+# from courses.models import (
+#     Word, Phrase, PhraseWord, Sentence, SentenceComponent,
+#     PART_OF_SPEECH_CHOICES, PublishStatus
+# )
 
 PART_OF_SPEECH_CHOICES = [
     ('noun', 'Noun'), ('verb', 'Verb'), ('adjective', 'Adjective'),

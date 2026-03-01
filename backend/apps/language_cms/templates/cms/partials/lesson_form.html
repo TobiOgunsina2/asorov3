@@ -1,0 +1,38 @@
+<div class="card" style="margin: 8px 0; border: 2px solid var(--jade-mid);">
+  <div style="padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-family: var(--font-display); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--jade);">
+      {{ action }} Lesson
+    </span>
+    <button type="button" class="btn btn-icon" onclick="this.closest('.card').remove()">×</button>
+  </div>
+  <div style="padding: 16px 20px;">
+    <form method="post"
+          action="{% if lesson %}{% url 'cms:lesson_edit' lesson.pk %}{% else %}{% url 'cms:lesson_create' group.pk %}{% endif %}"
+          hx-post="{% if lesson %}{% url 'cms:lesson_edit' lesson.pk %}{% else %}{% url 'cms:lesson_create' group.pk %}{% endif %}"
+          hx-target="#lesson-group-list"
+          hx-swap="innerHTML">
+      {% csrf_token %}
+      <div style="display: grid; grid-template-columns: 1fr 120px; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" name="title" class="form-control"
+                 value="{{ lesson.title|default:'' }}" placeholder="e.g. Greetings" required autofocus>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Order</label>
+          <input type="number" name="order" class="form-control" step="0.5"
+                 value="{{ lesson.order|default:'' }}" placeholder="1.0">
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label class="form-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input type="text" name="description" class="form-control"
+                 value="{{ lesson.description|default:'' }}" placeholder="Brief description…">
+        </div>
+      </div>
+      <div style="margin-top: 14px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="this.closest('.card').remove()">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save Lesson</button>
+      </div>
+    </form>
+  </div>
+</div>

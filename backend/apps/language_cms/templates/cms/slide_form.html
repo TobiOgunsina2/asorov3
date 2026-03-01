@@ -1,0 +1,158 @@
+{% extends "cms/base.html" %}
+{% block title %}{{ action }} Slide — LinguaForge CMS{% endblock %}
+{% block nav_units %}active{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+  <a href="{% url 'cms:unit_list' %}" style="color: var(--ink-muted); text-decoration: none;">Units</a>
+  <span>›</span>
+  <a href="{% url 'cms:unit_detail' lesson.group.unit.pk %}" style="color: var(--ink-muted); text-decoration: none;">{{ lesson.group.unit.title }}</a>
+  <span>›</span>
+  <a href="{% url 'cms:lesson_detail' lesson.pk %}" style="color: var(--ink-muted); text-decoration: none;">{{ lesson.title }}</a>
+  <span>›</span>
+  <span style="color: var(--ink);">{{ action }} Slide</span>
+</div>
+
+<div class="form-page" style="max-width: 960px;">
+  <div class="page-header">
+    <div>
+      <div class="page-title">{{ action }} Slide</div>
+      <div class="page-subtitle">{{ lesson.title }}</div>
+    </div>
+    <a href="{% url 'cms:lesson_detail' lesson.pk %}" class="btn btn-secondary">← Back to Lesson</a>
+  </div>
+
+  <form method="post"
+        id="slide-form"
+        action="{% if slide %}{% url 'cms:slide_edit' slide.pk %}{% else %}{% url 'cms:slide_create' lesson.pk %}{% endif %}">
+    {% csrf_token %}
+
+    <div style="display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start;">
+
+      <!-- Left column: main fields + dynamic content panel -->
+      <div>
+
+        <!-- Core fields -->
+        <div class="form-card">
+          <div class="form-card-title">Slide Settings</div>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label class="form-label">Slide Type</label>
+              <select name="slide_type" id="slide-type-select" class="form-control" required
+                      hx-get="{% url 'cms:slide_content_panel' %}"
+                      hx-trigger="change"
+                      hx-target="#content-panel"
+                      hx-swap="innerHTML"
+                      hx-include="[name='slide_type']"
+                      {% if slide %}hx-vals='{"slide_pk": "{{ slide.pk }}"}'{% endif %}>
+                <option value="">— Select type —</option>
+                {% for val, label in slide_types %}
+                <option value="{{ val }}" {% if slide.slide_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Order</label>
+              <input type="number" name="order" class="form-control" step="0.5"
+                     value="{{ slide.order|default:'' }}" placeholder="1.0">
+            </div>
+
+            <div class="form-group form-grid-full">
+              <label class="form-label">Title <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+              <input type="text" name="title" class="form-control"
+                     value="{{ slide.title|default:'' }}" placeholder="Displayed at top of slide…">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Dynamic content panel — swapped by HTMX when slide_type changes -->
+        <div id="content-panel">
+          {% if slide and slide.slide_type %}
+            {% include "cms/partials/slide_content_panel.html" with slide_type=slide.slide_type slide=slide content_data=content_data sentences=sentences %}
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Right column: vocabulary pickers -->
+      <div style="position: sticky; top: calc(var(--topbar-h) + 20px);">
+        <div class="form-card">
+          <div class="form-card-title">Vocabulary Attached</div>
+          <p style="font-size: 0.8rem; color: var(--ink-muted); margin-bottom: 14px;">
+            Select words, phrases, and sentences available to this slide's exercise.
+          </p>
+
+          <!-- Words picker -->
+          <div style="margin-bottom: 16px;">
+            <div class="form-label" style="margin-bottom: 8px;">Words</div>
+            <div style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+              {% for word in words %}
+              <label style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 0.83rem;">
+                <input type="checkbox" name="word_ids" value="{{ word.pk }}"
+                       {% if word.pk in selected_word_ids %}checked{% endif %}
+                       style="accent-color: var(--jade);">
+                <span style="font-weight: 500;">{{ word.text }}</span>
+                <span style="color: var(--ink-muted); margin-left: auto;">{{ word.translation }}</span>
+              </label>
+              {% empty %}
+              <div style="padding: 12px; text-align: center; color: var(--ink-faint); font-size: 0.8rem;">No published words</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Phrases picker -->
+          <div style="margin-bottom: 16px;">
+            <div class="form-label" style="margin-bottom: 8px;">Phrases</div>
+            <div style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+              {% for phrase in phrases %}
+              <label style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 0.83rem;">
+                <input type="checkbox" name="phrase_ids" value="{{ phrase.pk }}"
+                       {% if phrase.pk in selected_phrase_ids %}checked{% endif %}
+                       style="accent-color: var(--jade);">
+                <span style="font-weight: 500;">{{ phrase.text }}</span>
+                <span style="color: var(--ink-muted); margin-left: auto;">{{ phrase.translation }}</span>
+              </label>
+              {% empty %}
+              <div style="padding: 12px; text-align: center; color: var(--ink-faint); font-size: 0.8rem;">No published phrases</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Sentences picker -->
+          <div>
+            <div class="form-label" style="margin-bottom: 8px;">Sentences</div>
+            <div style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+              {% for sentence in sentences %}
+              <label style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 0.83rem;">
+                <input type="checkbox" name="sentence_ids" value="{{ sentence.pk }}"
+                       {% if sentence.pk in selected_sentence_ids %}checked{% endif %}
+                       style="accent-color: var(--jade);">
+                <span style="font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sentence.text }}</span>
+              </label>
+              {% empty %}
+              <div style="padding: 12px; text-align: center; color: var(--ink-faint); font-size: 0.8rem;">No published sentences</div>
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Save bar -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; padding: 8px 0 20px; margin-top: 8px; border-top: 1px solid var(--border);">
+      <a href="{% url 'cms:lesson_detail' lesson.pk %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Slide
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
