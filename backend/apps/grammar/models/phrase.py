@@ -25,6 +25,12 @@ class Phrase(CMSContentMixin, models.Model):
         related_name="phrases"
     )
 
+    # Allows for true idioms that don't have a direct word-for-word translation to be added for review.
+    is_idiom = models.BooleanField(
+        default=False,
+        help_text="Check if this phrase is a true idiom (non-literal translation)",
+    )
+
     def __str__(self):
         return self.text
 
@@ -40,3 +46,6 @@ class PhraseWord(models.Model):
 
     class Meta:
         ordering = ["order"]
+
+    def __str__(self):
+        return self.text

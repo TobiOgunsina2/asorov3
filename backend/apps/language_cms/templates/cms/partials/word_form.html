@@ -53,6 +53,15 @@
           {{ form.notes }}
         </div>
 
+        <div class="form-group">
+          <label for="{{ form.related_words.id_for_label }}">Related Words </label>
+          <select name="related_words" id="id_related_words" class="form-control" multiple>
+            {% for related_word in form.related_words %}
+              <option value="{{ related_word.text }}" {% if related_word in word.related_words.all %}selected{% endif %}>{{ related_word.text }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
         <!-- Preview -->
         <div style="padding:16px;background:var(--parchment);border-radius:var(--radius);border:1px solid var(--border-soft);">
           <div class="preview-type-label">Preview</div>

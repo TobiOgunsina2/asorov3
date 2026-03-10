@@ -26,6 +26,13 @@ PART_OF_SPEECH_CHOICES = [
 class Word(CMSContentMixin, models.Model):
     text = models.CharField(max_length=100)
     translation = models.CharField(max_length=255)
-    part_of_speech = models.CharField(max_length=50)
+    part_of_speech = models.CharField(max_length=50, choices=PART_OF_SPEECH_CHOICES, null=True, blank=True)
     # media = GenericRelation(Media)
+
+    # related words help with multiple choice slide generation as they can be picked from to 
+    # offer alternative options
+    related_words = models.ManyToManyField('self', symmetrical=False, blank=True)
+
+    def __str__(self):
+        return self.text
 

@@ -187,6 +187,7 @@ def lesson_create(request, group_pk):
             title=request.POST['title'],
             description=request.POST.get('description', ''),
             order=float(request.POST.get('order', order)),
+            difficulty=float(request.POST.get('difficulty', 1.0)),
         )
         if request.htmx:
             groups = group.unit.lesson_groups.prefetch_related('lessons').order_by('order')
@@ -224,6 +225,7 @@ def lesson_edit(request, pk):
         lesson.title = request.POST['title']
         lesson.description = request.POST.get('description', '')
         lesson.order = float(request.POST.get('order', lesson.order))
+        lesson.difficulty = float(request.POST.get('difficulty', lesson.difficulty))
         lesson.save()
         return redirect('cms:lesson_detail', pk=lesson.pk)
     return render(request, 'cms/partials/lesson_form.html', {

@@ -109,6 +109,7 @@ def word_create(request):
                 part_of_speech=form.cleaned_data["part_of_speech"],
                 notes=form.cleaned_data["notes"],
                 status=form.cleaned_data["status"],
+                related_words=form.cleaned_data["related_words"],
                 created_by=request.user,
             )
             messages.success(request, "Word created successfully.")
@@ -133,8 +134,9 @@ def word_edit(request, pk):
             word.part_of_speech = form.cleaned_data["part_of_speech"]
             word.notes = form.cleaned_data["notes"]
             word.status = form.cleaned_data["status"]
+            word.related_words = form.cleaned_data["related_words"]
             word.updated_at = timezone.now()
-            word.save(update_fields=["text", "translation", "part_of_speech", "notes", "status", "updated_at"])
+            word.save(update_fields=["text", "translation", "part_of_speech", "notes","related_words", "status", "updated_at"])
             messages.success(request, "Word updated.")
             if request.headers.get("HX-Request"):
                 return HttpResponse(status=204, headers={"HX-Trigger": "contentChanged"})
@@ -144,7 +146,9 @@ def word_edit(request, pk):
             "text": word.text,
             "translation": word.translation,
             "part_of_speech": word.part_of_speech,
+            "related_words": word.related_words.all(),
         })
+        form.fields["related_words"].queryset = Word.objects.exclude(pk=word.pk)
     template = "cms/partials/word_form.html" if request.headers.get("HX-Request") else "cms/word_form.html"
     return render(request, template, {"form": form, "action": "Edit", "object": word, "content_type": "word"})
 

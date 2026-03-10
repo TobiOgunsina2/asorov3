@@ -53,6 +53,15 @@
           </select>
         </div>
 
+        <div class="form-group">
+          <label class="form-label" for="id_related_words">Related Words</label>
+          <select name="related_words" id="id_related_words" class="form-control" multiple>
+            {% for related_word in related_words %}
+            <option value="{{ related_word.text }}" {% if related_word in word.related_words.all %}selected{% endif %}>{{ related_word.text }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
       </div><!-- /form-grid -->
 
       <div class="form-actions">

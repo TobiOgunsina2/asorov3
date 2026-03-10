@@ -20,6 +20,8 @@
     {% if lesson.description %}
     <div class="page-subtitle">{{ lesson.description }}</div>
     {% endif %}
+    <div class="page-meta">Difficulty: {{ lesson.difficulty }}</div>
+
   </div>
   <div style="display: flex; gap: 10px;">
     <a href="{% url 'cms:lesson_edit' lesson.pk %}" class="btn btn-secondary">Edit Lesson</a>

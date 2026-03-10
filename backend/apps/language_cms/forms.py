@@ -2,6 +2,8 @@
 from django import forms
 from django.forms import inlineformset_factory
 
+from apps.grammar.models.word import Word
+
 # ── Import from your actual app, e.g. "from courses.models import ..."
 # We use string references here so this file is portable.
 # Replace the imports below with your real model imports.
@@ -27,6 +29,13 @@ class WordForm(forms.Form):
     part_of_speech = forms.ChoiceField(choices=PART_OF_SPEECH_CHOICES, widget=forms.Select(attrs={'class': 'cms-select'}))
     notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'class': 'cms-textarea', 'rows': 2, 'placeholder': 'Internal notes...'}))
     status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.Select(attrs={'class': 'cms-select'}))
+    related_words = forms.ModelMultipleChoiceField(
+        queryset=Word.objects.all(),
+        widget=forms.SelectMultiple(attrs={
+            "class": "form-control",
+            "size": 12,   # shows many words at once
+        })
+    )
 
 
 class PhraseForm(forms.Form):
@@ -42,6 +51,7 @@ class SentenceForm(forms.Form):
     text = forms.CharField(max_length=255, widget=forms.TextInput(attrs={'class': 'cms-input', 'placeholder': 'Sentence in target language'}))
     translation = forms.CharField(max_length=255, widget=forms.TextInput(attrs={'class': 'cms-input', 'placeholder': 'English translation'}))
     notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'class': 'cms-textarea', 'rows': 2, 'placeholder': 'Internal notes...'}))
+    difficulty = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'cms-input', 'placeholder': 'Sentence Difficulty'}))
     status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.Select(attrs={'class': 'cms-select'}))
 
 

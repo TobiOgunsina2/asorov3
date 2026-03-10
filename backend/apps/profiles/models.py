@@ -20,16 +20,3 @@ class Profile(models.Model):
 
     xp = models.IntegerField(default=0)
     streak = models.IntegerField(default=0)
-
-# Tracks learning progress for each user lesson
-class UserLessonProgress(models.Model):
-    profile = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-
-    completed = models.BooleanField(default=False)
-
-    started_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return str(str(self.profile.display_name) + " - " + str(self.lesson))

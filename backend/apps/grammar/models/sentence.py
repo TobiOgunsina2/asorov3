@@ -2,7 +2,9 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from apps.language_cms.models import CMSContentMixin
-
+from .phrase import Phrase
+from .word import Word
+from django.core.exceptions import ValidationError
 
 # Content Mixin adds:
 #   draft
@@ -19,6 +21,9 @@ class Sentence(CMSContentMixin, models.Model):
     translation = models.CharField(max_length=255)
     # media = GenericRelation(Media)
 
+    # Difficult of a sentence is arbitrary but useful for generation of slides
+    difficulty = models.PositiveIntegerField(db_index=True, default=1)
+
 
     def __str__(self):
         return self.text
@@ -26,12 +31,24 @@ class Sentence(CMSContentMixin, models.Model):
 # This is the through model for both phrases and words to sentence. Can be accessed on sentence as sentence.components
 # Typing is weak through content_type!!!
 class SentenceComponent(models.Model):
+
+    # 1 -> Many Relationship | As Opposed to many to many in Phrase model 
     sentence = models.ForeignKey(Sentence, on_delete=models.CASCADE, related_name="components")
 
-    # GenericForeignKey to Word or Phrase
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey("content_type", "object_id")
+    # Sentence Component can be Phrase || Word
+    word = models.ForeignKey(
+        Word,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    phrase = models.ForeignKey(
+        Phrase,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
 
     order = models.PositiveIntegerField()
 
@@ -42,20 +59,34 @@ class SentenceComponent(models.Model):
     class Meta:
         ordering = ["order"]
 
-"""
-For further reference, lesson models should be serialized as such to minimize queries:
+    @property
+    def text(self):
+        return self.word.text if self.word else self.phrase.text
+    
+    # Method to ensure that exactly one of word or phrase is set, and that highlight range is valid if set
+    def clean(self):
+        if bool(self.word) == bool(self.phrase):
+            raise ValidationError(
+                "Component must reference exactly one of word or phrase."
+            )
 
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Prefetch
+        if (
+            self.highlight_start is not None
+            and self.highlight_end is not None
+            and self.highlight_start >= self.highlight_end
+        ):
+            raise ValidationError("Invalid highlight range.")
 
-word_type = ContentType.objects.get_for_model(Word)
-phrase_type = ContentType.objects.get_for_model(Phrase)
 
-LessonSlide.objects.prefetch_related(
-    Prefetch(
-        "sentence__components",
-        queryset=SentenceComponent.objects.select_related("content_type").prefetch_related("content_object__phrase_words__word")
-    )
-)
+# This model allows for quick lookup of which sentences a word is in, without having to go through the SentenceComponent table and check content types.
+# Crucial for quick generation of exercises and lessons based on sentences containing certain words. Updated via signals when SentenceComponents are created/updated/deleted.   
+class SentenceWordIndex(models.Model):
+    sentence = models.ForeignKey(Sentence, on_delete=models.CASCADE, related_name="sentence_words",)
+    word = models.ForeignKey(Word, on_delete=models.CASCADE, related_name="sentence_occurrences")
 
-"""
+    class Meta:
+        unique_together = ("sentence", "word")
+        indexes = [
+            models.Index(fields=["word"]),
+            models.Index(fields=["sentence"]),
+        ]

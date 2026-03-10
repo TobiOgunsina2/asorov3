@@ -8,10 +8,20 @@ class LessonGroup(models.Model):
     title = models.CharField(max_length=200)
     order = models.FloatField()
 
+    def __str__(self):
+        return str("Lesson Group - " + self.title)
+
+
 # A lesson can be the only one in it's group
 class Lesson(models.Model):
     group = models.ForeignKey(LessonGroup, null=True, blank=True, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     order = models.FloatField()
+
+    difficulty = models.IntegerField(default=1)  # New field to indicate lesson difficulty
+
+    def __str__(self):
+        return str("Lesson - " + self.title)
+
 
