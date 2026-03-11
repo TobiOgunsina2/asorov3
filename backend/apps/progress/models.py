@@ -12,7 +12,6 @@ class UserLessonProgress(models.Model):
 
     completed = models.BooleanField(default=False)
 
-    started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -22,7 +21,7 @@ class UserWordProgress(models.Model):
     """
     Tracks the progress of a user with respect to a specific word.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE)
     word = models.ForeignKey(Word, on_delete=models.CASCADE)
 
     # FSRS state

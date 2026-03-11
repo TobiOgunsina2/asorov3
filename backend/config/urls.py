@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('cms/', include('apps.language_cms.urls', namespace='cms')),
     path('api/curriculum/', include('apps.curriculum.urls')),
+    path('api/progress/', include('apps.progress.urls')),
     path('accounts/', include('django.contrib.auth.urls')),  # for login/logout
 ]
