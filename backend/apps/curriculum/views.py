@@ -4,25 +4,23 @@ import random
 from django.shortcuts import get_object_or_404
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions
+from rest_framework.views import APIView, Response
+from django.utils import timezone
 
-from apps.curriculum.models.lesson import Lesson
-from apps.curriculum.models.slide import SlideWord
-from apps.curriculum.models.unit import Unit
+from .constants import max_review_items, max_lesson_review_items
+from .helpers import get_sentences_for_words
+from apps.curriculum.models import Lesson, Unit
 
-from apps.curriculum.serializers import (
-    LessonItemSerializer, 
+from apps.curriculum.serializers import ( 
     LessonSerializer, 
-    UnitSerializer
+    UnitSerializer,
+    ReviewLessonSlideSerializer
 )
 
-from apps.grammar.models.sentence import SentenceComponent
+from apps.grammar.models import Sentence
 from apps.profiles.models import Profile
 from apps.progress.models import UserIdiomProgress, UserLessonProgress, UserWordProgress
 from apps.progress.views import update_progress
-from .const import max_review_items
-from rest_framework.views import APIView, Response
-from django.utils import timezone
-from apps.grammar.models import Sentence
 
 # Create your views here.
 
@@ -36,127 +34,50 @@ class LessonView(APIView):
     def get(self, request, code):
         user = request.user
 
-        try:
-            lesson = get_object_or_404(Lesson, code=code)
+        # Fetch the lesson with its slides and related content
 
-            # Fetch the lesson with its slides and related content
+        lesson = Lesson.objects.prefetch_related(
+        "slides__slide_words",
+        "slides__slide_phrases",
+        "slides__slide_sentences",
+        "slides__slide_words__word__related_words",
+        "slides__slide_phrases__phrase_words",
+        ).get(code=code)
 
-            slide_words = SlideWord.objects.filter(
-                slide__lesson=lesson
-                ).select_related("word")
+        # Fetch due words for the user and get sentences for them
 
-            due_words = UserWordProgress.objects.filter(
-                user=user,
-                due__lte=timezone.now()
-            ).select_related("word")[:max_review_items]
+        due_words = UserWordProgress.objects.filter(
+            user=user,
+            due__lte=timezone.now()
+        ).select_related("word")[:max_lesson_review_items]
 
-            word_ids = set(sw.word_id for sw in slide_words)
-            word_ids.update(p.word_id for p in due_words)
-            
-            components = (
-                SentenceComponent
-                    .objects
-                    .filter(word_id__in=word_ids, sentence__difficulty__lte=lesson.difficulty)
-                    .select_related("word", "sentence")
-                    .distinct()
-            )  # Fetch sentences that include these words
+        words = [dw.word for dw in due_words]
+        review_data = get_sentences_for_words(words, user.difficulty)
+        
+        # Serialize the review data and lesson data
+        review_slides = ReviewLessonSlideSerializer(review_data, many=True).data
+        lesson = LessonSerializer(lesson).data
 
-            sentence_ids = [sc.sentence_id for sc in components]
-
-            sentences = Sentence.objects.in_bulk(sentence_ids)  # Fetch sentences in bulk
-
-            # Defaultdict to map word_id to sentences that include it
-            sentence_map = defaultdict(list)
-
-            for component in components:
-                # Map word_id to sentences that include it
-                sentence_map[component.word_id].append(sentences[component.sentence_id])
-            
-            lesson_items = []
-
-            for sw in slide_words:
-                sentence = None
-                
-                # Add random sentences for slide words, and review sentences for due words
-                if sw.slide.slide_type == "Random":
-                    # No point of checking sentence_map if the slide is not random
-                    if sentence_map[sw.word_id]:
-                        sentence = random.choice(sentence_map[sw.word_id])
-                
-                # All lesson slides are added under here
-                lesson_items.append({
-                    "type": "slide_word",
-                    "slide": sw.slide,
-                    "word": sw.word,
-                    "sentence": sentence,
-                })
-
-            for due_word in due_words:
-                if sentence_map[due_word.word_id]:
-                    sentence = random.choice(sentence_map[due_word.word_id])
-
-                    lesson_items.append({
-                        "type": "review_word",
-                        "word": due_word.word,
-                        "sentence": sentence,
-                    })    
-
-            serialized_items = LessonItemSerializer(lesson_items, many=True).data
-            lesson = LessonSerializer(lesson).data
-
-            return Response({"lesson": {**lesson, "items": serialized_items}})
-        except Lesson.DoesNotExist:
-            return Response({"error": "Lesson not found"}, status=404)
-
+        return Response({"lesson": {**lesson, "review_slides": review_slides}})
+    
 class PracticeView(APIView):
     def get(self, request):
         user = request.user
 
-        try:
-            profile = Profile.objects.get(user=user)
-            due_words = UserWordProgress.objects.filter(
-                profile=profile,
-                due__lte=timezone.now()
-            ).select_related("word")[:20]  # Fetch due words for review
+        due_words = UserWordProgress.objects.filter(
+            user=user,
+            due__lte=timezone.now()
+        ).select_related("word")[:max_review_items]
 
-            word_ids = set(p.word_id for p in due_words)
-            
-            components = (
-                SentenceComponent
-                    .objects
-                    .filter(word_id__in=word_ids, sentence__difficulty__lte=profile.xp) # Update to a profile field that tracks overall progress/difficulty
-                    .select_related("word", "sentence")
-                    .distinct()
-            )  # Fetch sentences that include these words
+        words = [dw.word for dw in due_words]
+        review_data = get_sentences_for_words(words, user.difficulty)
+        
+        # Serialize the review data and lesson data
+        review_slides = ReviewLessonSlideSerializer(review_data, many=True).data
+        lesson = LessonSerializer(lesson).data
 
-            sentence_ids = [sc.sentence_id for sc in components]
+        return Response({"review_words": review_slides})
 
-            sentences = Sentence.objects.in_bulk(sentence_ids)  # Fetch sentences in bulk
-
-            # Defaultdict to map word_id to sentences that include it
-            sentence_map = defaultdict(list)
-
-            for component in components:
-                # Map word_id to sentences that include it
-                sentence_map[component.word_id].append(sentences[component.sentence_id])
-            
-            lesson_items = []
-
-            for due_word in due_words:
-                if sentence_map[due_word.word_id]:
-                    sentence = random.choice(sentence_map[due_word.word_id])
-
-                    lesson_items.append({
-                        "type": "review_word",
-                        "word": due_word.word,
-                        "sentence": sentence,
-                    })    
-
-            serialized_items = LessonItemSerializer(lesson_items, many=True).data
-
-            return Response({"review_items": serialized_items})
-        except Lesson.DoesNotExist:
-            return Response({"error": "Lesson not found"}, status=404)
 
 class ExerciseComplete(APIView):
     def post(self, request, code):

@@ -31,7 +31,9 @@ class LessonSlide(models.Model):
 
     def __str__(self):
         return f"{self.slide_type}: {self.lesson.title} (#{self.order})"
-    
+
+
+# These models link the lesson slides to specific words, phrases, and sentences that are relevant for the exercises.
 class SlideWord(models.Model):
     slide = models.ForeignKey(LessonSlide, on_delete=models.CASCADE, related_name="slide_words")
     word = models.ForeignKey(Word, on_delete=models.CASCADE)

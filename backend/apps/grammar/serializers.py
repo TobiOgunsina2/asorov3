@@ -31,6 +31,13 @@ class PhraseSerializer(serializers.ModelSerializer):
             "is_idiom", "phrase_words"
         ]
 
+class SentencePhraseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Phrase
+        fields = [
+            "id", "text", "translation", "difficulty",
+            "is_idiom"
+        ]
 
 class SentenceComponentSerializer(serializers.ModelSerializer):
     component_type = serializers.SerializerMethodField()
@@ -55,7 +62,7 @@ class SentenceComponentSerializer(serializers.ModelSerializer):
         if obj.word_id:
             return RelatedWordSerializer(obj.word).data
         if obj.phrase_id:
-            return PhraseSerializer(obj.phrase, context=self.context).data
+            return SentencePhraseSerializer(obj.phrase, context=self.context).data
         return None
 
 
