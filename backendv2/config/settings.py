@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'apps.vocabulary',
     'apps.courses',
+    'apps.exercises',
 ]
 
 MIDDLEWARE = [
