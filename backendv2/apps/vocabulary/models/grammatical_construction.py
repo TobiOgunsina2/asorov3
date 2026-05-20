@@ -1,6 +1,7 @@
 from django.db import models
 from apps.vocabulary.models.lexeme import Lexeme, LexemeVariant
 from django.core.exceptions import ValidationError
+from django.db.models import Max
 
 # Create your models here.
 
@@ -54,7 +55,8 @@ class Construction(models.Model):
         ordering = ['-created_at']
 
 
-# The individual components that make up a construction. This can be a lexeme or another construction (for nested constructions).
+# The individual components that make up a construction. 
+# This can be a lexeme or another construction (for nested constructions).
 class ConstructionComponent(models.Model):
     
     # Parent construction that this component belongs to
@@ -65,10 +67,17 @@ class ConstructionComponent(models.Model):
     )
 
     lexeme = models.ForeignKey(
-        LexemeVariant,
+        Lexeme,
         null=True,
         blank=True,
         on_delete=models.CASCADE
+    )
+
+    lexeme_variant = models.ForeignKey(
+        LexemeVariant, 
+        on_delete=models.CASCADE, 
+        blank=True, 
+        null=True, 
     )
 
     child_construction = models.ForeignKey(
@@ -80,32 +89,87 @@ class ConstructionComponent(models.Model):
 
     position = models.PositiveIntegerField()
 
-    grammatical_role = models.CharField(
-        max_length=50,
-        blank=True
-    )
-
-    highlight_start = models.PositiveIntegerField(null=True, blank=True)
-    highlight_end = models.PositiveIntegerField(null=True, blank=True)
+    def __str__(self):
+        target = self.lexeme or self.child_construction
+        return f"{self.construction} [{self.position}] - {target}"
 
 
     class Meta:
         ordering = ["position"]
 
-    # Method to ensure that exactly one of word or phrase is set, and that highlight range is valid if set
-    def clean(self):
-        if bool(self.word) == bool(self.phrase):
-            raise ValidationError(
-                "Component must reference exactly one of word or phrase."
+        constraints = [
+            models.UniqueConstraint(
+                fields=['construction', 'position'], 
+                name='unique_component_position_per_construction'
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(lexeme__isnull=False, child_construction__isnull=True)
+                    | models.Q(lexeme__isnull=True, child_construction__isnull=False)
+                ),
+                name="component_xor_lexeme_or_construction",
             )
+        ]
 
+    # Method to ensure that a component cannot point to both a 
+    # Lexeme and a child Construction, and must point to at least one of them.
+    def clean(self):     
+        if self.lexeme_variant and not self.lexeme:
+            self.lexeme = self.lexeme_variant.lexeme
+
+        if self.lexeme and self.child_construction:
+            raise ValidationError("A component cannot point to both a Lexeme and a child Construction.")
+        
+        if not self.lexeme and not self.child_construction:
+            raise ValidationError("A component must point to either a Lexeme or a child Construction.")
+        
+        if self.lexeme_variant and self.lexeme_variant.lexeme_id != self.lexeme_id:
+            raise ValidationError("The selected LexemeVariant does not belong to the selected Lexeme.")
+
+    def save(self, *args, **kwargs):
+        if self.lexeme_variant and not self.lexeme:
+            self.lexeme = self.lexeme_variant.lexeme
+
+        if self.position is None:
+            # Look up the maximum position within this construction
+            last_position = ConstructionComponent.objects.filter(
+                construction=self.construction
+            ).aggregate(Max('position'))['position__max']
+            
+            # If last_position is None (first item), fallback to 0, then add 1
+            self.position = (last_position or 0) + 1
+        
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+
+# Highlights allow users to see definitions of parts of a construction in context.
+class Highlight(models.Model):
+    construction_component = models.ForeignKey(
+        ConstructionComponent,
+        on_delete=models.CASCADE,
+        related_name="highlights"
+    )
+
+    start_index = models.PositiveIntegerField()
+    end_index = models.PositiveIntegerField()
+
+    def clean(self):
         if (
-            self.highlight_start is not None
-            and self.highlight_end is not None
-            and self.highlight_start >= self.highlight_end
+            self.start_index is not None
+            and self.end_index is not None
+            and self.start_index >= self.end_index
         ):
             raise ValidationError("Invalid highlight range.")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
+
+# Flattened map linking constructions to all contained lexemes and variants.
+# Enables fast context lookups for SRS review loops.
 
 class ConstructionLexeme(models.Model):
 
@@ -117,25 +181,27 @@ class ConstructionLexeme(models.Model):
 
     lexeme = models.ForeignKey(
         Lexeme,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="construction_index"
     )
 
-    is_direct = models.BooleanField(default=True)
-
-    depth = models.PositiveSmallIntegerField(default=0)
+    lexeme_variant = models.ForeignKey(
+        LexemeVariant, 
+        on_delete=models.CASCADE, 
+        blank=True, 
+        null=True, 
+        related_name="construction_index"
+    )
 
     class Meta:
-        unique_together = (
-            "construction",
-            "lexeme",
-            "depth",
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=['construction', 'lexeme', 'lexeme_variant'], 
+                name='unique_construction_lexeme_variant_index'
+            )
+        ]
 
         indexes = [
-            models.Index(
-                fields=["lexeme"]
-            ),
-            models.Index(
-                fields=["construction"]
-            ),
+            models.Index(fields=["lexeme", "construction"]),
+            models.Index(fields=["lexeme_variant", "construction"]),
         ]

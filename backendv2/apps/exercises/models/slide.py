@@ -1,5 +1,6 @@
 from django.db import models
 from apps.courses.models.Lesson import Lesson
+from apps.vocabulary.models.grammatical_construction import Construction
 from apps.vocabulary.models.lexeme import Lexeme 
 from django.db.models import Prefetch
 
@@ -56,4 +57,22 @@ class Slide(models.Model):
 
     def __str__(self):
         return f"{self.slide_type}: {self.lesson.title} (#{self.order})"
+
+
+# These models link the lesson slides to specific words, phrases, and sentences that are relevant for the exercises.
+class SlideLexeme(models.Model):
+    slide = models.ForeignKey(Slide, on_delete=models.CASCADE, related_name="slide_lexemes")
+    lexeme = models.ForeignKey(Lexeme, on_delete=models.CASCADE)
+    order = models.IntegerField(null=True, blank=True)  # if it's a multiple choice question, this can be used to order the options
+
+    class Meta:
+        ordering = ["order"]
+
+class SlideConstruction(models.Model):
+    slide = models.ForeignKey(Slide, on_delete=models.CASCADE, related_name="slide_constructions")
+    construction = models.ForeignKey(Construction, on_delete=models.CASCADE)
+    order = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["order"]
 

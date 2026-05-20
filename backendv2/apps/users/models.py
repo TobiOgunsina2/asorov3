@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .managers import UserManager, Role
+from django.contrib.auth.validators import UnicodeUsernameValidator
 import uuid
 
 # Create your models here.
@@ -36,3 +37,21 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email} ({self.role})"
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    # Unique user display name
+    display_name = models.CharField(
+        unique=True,
+        blank=True,
+        max_length=20,
+        validators=[UnicodeUsernameValidator()],
+        help_text="Public handle or display name (letters, digits, Unicode, @/./+/-/_ allowed)"
+    )
+    avatar_url = models.URLField(blank=True)
+
+    xp = models.IntegerField(default=0)
+    streak = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"Profile of {self.user.email}"

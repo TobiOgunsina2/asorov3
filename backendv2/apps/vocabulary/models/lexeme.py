@@ -31,11 +31,22 @@ class Lexeme(models.Model):
 # This model represents a variant of a lexeme, which can include different forms of the word
 # E.g the verb ni can be the preoposition "in" or can be the verb "to be"
 
+class PartOfSpeech(models.TextChoices):
+    NOUN = 'NOUN', 'Noun'
+    VERB = 'VERB', 'Verb'
+    ADJECTIVE = 'ADJECTIVE', 'Adjective'
+    ADVERB = 'ADVERB', 'Adverb'
+    PREPOSITION = 'PREPOSITION', 'Preposition'
+    CONJUNCTION = 'CONJUNCTION', 'Conjunction'
+    INTERJECTION = 'INTERJECTION', 'Interjection'
+    PRONOUN = 'PRONOUN', 'Pronoun'
+    OTHER = 'OTHER', 'Other'
+
 class LexemeVariant(models.Model):
     lexeme = models.ForeignKey(Lexeme, related_name='variants', on_delete=models.CASCADE)
     variant = models.CharField(max_length=255)
 
-    part_of_speech = models.CharField(max_length=255, blank=True, null=True)
+    part_of_speech = models.CharField(max_length=255, blank=True, null=True, choices=PartOfSpeech.choices)
 
     explanation = models.TextField(blank=True, null=True)
 
