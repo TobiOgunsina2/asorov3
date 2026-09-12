@@ -6,8 +6,9 @@ from django.apps import apps
 app_models = apps.get_app_config('grammar').get_models()
 
 for model in app_models:
-    try:
-        admin.site.register(model)
-    except admin.sites.AlreadyRegistered:
-        # This prevents errors if you manually registered a model earlier
-        pass
+    if model.__name__ in ["Sentence", "Word", "Phrase"]:
+        try:
+            admin.site.register(model)
+        except admin.sites.AlreadyRegistered:
+            # This prevents errors if you manually registered a model earlier
+            pass

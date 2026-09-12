@@ -41,14 +41,3 @@ class PartOfSpeech(models.TextChoices):
     INTERJECTION = 'INTERJECTION', 'Interjection'
     PRONOUN = 'PRONOUN', 'Pronoun'
     OTHER = 'OTHER', 'Other'
-
-class LexemeVariant(models.Model):
-    lexeme = models.ForeignKey(Lexeme, related_name='variants', on_delete=models.CASCADE)
-    variant = models.CharField(max_length=255)
-
-    part_of_speech = models.CharField(max_length=255, blank=True, null=True, choices=PartOfSpeech.choices)
-
-    explanation = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.variant

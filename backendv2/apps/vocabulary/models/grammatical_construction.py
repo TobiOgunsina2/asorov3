@@ -1,5 +1,5 @@
 from django.db import models
-from apps.vocabulary.models.lexeme import Lexeme, LexemeVariant
+from apps.vocabulary.models.lexeme import Lexeme
 from django.core.exceptions import ValidationError
 from django.db.models import Max
 
@@ -7,7 +7,7 @@ from django.db.models import Max
 
 class ConstructionType(models.TextChoices):
     IDIOM = 'Idiom'
-    PATTERN = "pattern"
+    PATTERN = "Pattern"
     PHRASE = 'Phrase'
     SENTENCE = 'Sentence'
 
@@ -73,18 +73,12 @@ class ConstructionComponent(models.Model):
         on_delete=models.CASCADE
     )
 
-    lexeme_variant = models.ForeignKey(
-        LexemeVariant, 
-        on_delete=models.CASCADE, 
-        blank=True, 
-        null=True, 
-    )
-
     child_construction = models.ForeignKey(
         Construction,
         null=True,
         blank=True,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="parent_construction_components"
     )
 
     position = models.PositiveIntegerField()
@@ -114,22 +108,13 @@ class ConstructionComponent(models.Model):
     # Method to ensure that a component cannot point to both a 
     # Lexeme and a child Construction, and must point to at least one of them.
     def clean(self):     
-        if self.lexeme_variant and not self.lexeme:
-            self.lexeme = self.lexeme_variant.lexeme
-
         if self.lexeme and self.child_construction:
             raise ValidationError("A component cannot point to both a Lexeme and a child Construction.")
         
         if not self.lexeme and not self.child_construction:
             raise ValidationError("A component must point to either a Lexeme or a child Construction.")
         
-        if self.lexeme_variant and self.lexeme_variant.lexeme_id != self.lexeme_id:
-            raise ValidationError("The selected LexemeVariant does not belong to the selected Lexeme.")
-
     def save(self, *args, **kwargs):
-        if self.lexeme_variant and not self.lexeme:
-            self.lexeme = self.lexeme_variant.lexeme
-
         if self.position is None:
             # Look up the maximum position within this construction
             last_position = ConstructionComponent.objects.filter(
@@ -168,10 +153,10 @@ class Highlight(models.Model):
         super().save(*args, **kwargs)
 
 
-# Flattened map linking constructions to all contained lexemes and variants.
+# Flattened map linking constructions to all contained lexemes.
 # Enables fast context lookups for SRS review loops.
 
-class ConstructionLexeme(models.Model):
+class ConstructionLexeme(models.Model): # Add a script to populate this table when a new construction is created or updated.
 
     construction = models.ForeignKey(
         Construction,
@@ -185,23 +170,14 @@ class ConstructionLexeme(models.Model):
         related_name="construction_index"
     )
 
-    lexeme_variant = models.ForeignKey(
-        LexemeVariant, 
-        on_delete=models.CASCADE, 
-        blank=True, 
-        null=True, 
-        related_name="construction_index"
-    )
-
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['construction', 'lexeme', 'lexeme_variant'], 
-                name='unique_construction_lexeme_variant_index'
+                fields=['construction', 'lexeme'], 
+                name='unique_construction_lexeme_index'
             )
         ]
 
         indexes = [
             models.Index(fields=["lexeme", "construction"]),
-            models.Index(fields=["lexeme_variant", "construction"]),
         ]

@@ -58,6 +58,8 @@ class SentenceComponent(models.Model):
 
     class Meta:
         ordering = ["order"]
+        unique_together = ("word", "sentence")  # no duplicate links
+        indexes = [models.Index(fields=["word"])]
 
     @property
     def text(self):
@@ -77,6 +79,8 @@ class SentenceComponent(models.Model):
         ):
             raise ValidationError("Invalid highlight range.")
 
+
+# Remove this 
 
 # This model allows for quick lookup of which sentences a word is in, without having to go through the SentenceComponent table and check content types.
 # Crucial for quick generation of exercises and lessons based on sentences containing certain words. Updated via signals when SentenceComponents are created/updated/deleted.   

@@ -1,6 +1,35 @@
 from django.db import models
 from .lesson import Lesson
 from apps.grammar.models import Phrase, Sentence, Word 
+from django.db.models import Prefetch
+
+# Query Set for easier prefetching
+class SlideQuerySet(models.QuerySet):
+
+    def with_slide_content(self):
+        return self.prefetch_related(
+            Prefetch(
+                "slide_words",
+                queryset=SlideWord.objects.select_related(
+                    "word"
+                ).prefetch_related(
+                    Prefetch("word__related_words")
+                ),
+            ),
+            Prefetch(
+                "slide_phrases",
+                queryset=SlidePhrase.objects.prefetch_related(
+                    "phrase_words"
+                ),
+            ),
+            Prefetch(
+                "slide_sentences",
+                queryset=SlideSentence.objects.prefetch_related(
+                    "sentence_words",
+                    "sentence_phrases"
+                ),
+            ),
+        )
 
 # The lesson slide model is a base model which can be improved by one of the slide type models to add augmentations
 class LessonSlide(models.Model):
@@ -26,6 +55,8 @@ class LessonSlide(models.Model):
         ],
     )
 
+    objects = SlideQuerySet.as_manager()
+
     class Meta:
         ordering = ["order"]
 
@@ -48,3 +79,13 @@ class SlideSentence(models.Model):
     slide = models.ForeignKey(LessonSlide, on_delete=models.CASCADE, related_name="slide_sentences")
     sentence = models.ForeignKey(Sentence, on_delete=models.CASCADE)
     order = models.FloatField(null=True, blank=True)
+
+
+class SlideItem(models.Model):
+    slide = models.ForeignKey(LessonSlide, on_delete=models.CASCADE, related_name="slide_items")
+    
+    word = models.ForeignKey(Word, on_delete=models.CASCADE)
+    phrase = models.ForeignKey(Phrase, on_delete=models.CASCADE)
+    sentence = models.ForeignKey(Sentence, on_delete=models.CASCADE)
+
+    order = models.FloatField(null=True, blank=True)  # if order matters for the exercise
