@@ -6,13 +6,20 @@ import { api } from '@/api/clients'
 const Page = async () => {
 
   const { data: units, error } = await api.GET('/api/v1/courses/units/')
+
+  if (error) {
+    // TypeScript knows the structure of 'error' based on your OpenAPI spec
+    console.error('Failed to fetch units:', error);
+    // Handle the error (e.g., show a notification, return early)
+    return;
+  }
     
   return (
-    <div className='text-black'>
-      {units?.map(()=>{
-        return <Unit/>
+    <>
+      {units?.map((unit)=>{
+        return <Unit key={unit.id} unit={unit}/>
       })}
-    </div>
+    </>
   )
 }
 

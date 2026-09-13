@@ -10,23 +10,21 @@ const Layout = ({
 }>) => {
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-[#f5f0e8] to-[#f0a07a]">
+    <div className="min-h-screen bg-linear-to-br from-[#f5f0e8] to-[#f0a07a]">
       
       <div className="fixed inset-0 z-0 pointer-events-none">{/* characters, animations live here, can go anywhere */}</div>
 
-      <nav className="fixed top-0 left-0 right-0 z-20 h-20 flex justify-between pt-1 px-8 shadow-sm">
-        <Navbar/>
+      <nav className="sticky bg-linear-to-br from-[#f5f0e8] to-[#f3c1aa] top-0 z-30 px-6 pt-1 shadow-sm">
+          <Navbar/>
       </nav>
 
-      <aside className="fixed lg:w-1/4 max-w-80 top-36 right-8 bottom-0 w-80 z-10 overflow-y-auto">
+      <aside className="fixed top-36 right-8 bottom-0 z-10 max-w-80 w-80 lg:w-1/4">
         <Sidebar/>
       </aside>
 
-      <div className="absolute top-20 left-0 right-80 bottom-0 overflow-y-auto">
-        <main className="">  
-          {children}
-        </main>
-      </div>
+      <main className="px-6 py-6 overflow-y-auto snap-y snap-mandatory gap-28">
+        {children}
+      </main>
 
     </div>
   )

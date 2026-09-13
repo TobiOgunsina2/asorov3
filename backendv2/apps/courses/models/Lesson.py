@@ -40,19 +40,19 @@ class Lesson(models.Model):
     
     # Override save method to generate unique short code for the lesson
     def save(self, *args, **kwargs):
-        if self.short_code:
+        if self.code:
             return super().save(*args, **kwargs)
 
         while True:
             try:
-                self.short_code = generate_unique_short_code(Lesson)
+                self.code = generate_unique_short_code(Lesson, "code", length=LESSON_ID_LENGTH)
 
                 with transaction.atomic():
                     return super().save(*args, **kwargs)
 
             except IntegrityError:
                 # Collision occurred, retry
-                self.short_code = None
+                self.code = None
     
     class Meta:
         constraints = [
