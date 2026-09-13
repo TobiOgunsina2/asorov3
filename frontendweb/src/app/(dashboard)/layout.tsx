@@ -1,6 +1,6 @@
 import React from 'react'
-import Sidebar from "@/components/Sidebar";
-import Navbar from '@/components/Navbar';
+import Sidebar from "@/components/dashboard/Sidebar";
+import Navbar from '@/components/dashboard/Navbar';
 
 
 const Layout = ({
@@ -8,6 +8,7 @@ const Layout = ({
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-[#f5f0e8] to-[#f0a07a]">
       
@@ -17,11 +18,11 @@ const Layout = ({
         <Navbar/>
       </nav>
 
-      <aside className="fixed top-36 right-8 bottom-0 w-80 z-10 overflow-y-auto">
+      <aside className="fixed lg:w-1/4 max-w-80 top-36 right-8 bottom-0 w-80 z-10 overflow-y-auto">
         <Sidebar/>
       </aside>
 
-      <div className="absolute top-16 left-0 right-80 bottom-0 overflow-y-auto">
+      <div className="absolute top-20 left-0 right-80 bottom-0 overflow-y-auto">
         <main className="">  
           {children}
         </main>
